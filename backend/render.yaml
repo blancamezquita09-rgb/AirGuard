@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: airguard-backend
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node src/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: MONGODB_URI
+        sync: false   # ingresar manualmente en Render dashboard
+      - key: OPENAQ_API_KEY
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_JWT_SECRET
+        generateValue: true   # Render genera uno automáticamente
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_SECURE
+        value: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: APP_URL
+        fromService:
+          type: web
+          name: airguard-backend
+          property: host
+      - key: ALERT_AQI_THRESHOLD
+        value: 100
+      - key: OPENAQ_FETCH_INTERVAL_MS
+        value: 90000
+      - key: OPENAQ_DAILY_LIMIT
+        value: 1000
