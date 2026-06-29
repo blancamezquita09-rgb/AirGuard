@@ -8,9 +8,7 @@
     "dev": "nodemon src/index.js",
     "generate-vapid": "node -e \"const wp=require('web-push');const k=wp.generateVAPIDKeys();console.log('VAPID_PUBLIC_KEY='+k.publicKey);console.log('VAPID_PRIVATE_KEY='+k.privateKey);\""
   },
-  "engines": {
-    "node": ">=18.0.0"
-  },
+  "engines": { "node": ">=18.0.0" },
   "dependencies": {
     "axios": "^1.6.7",
     "cors": "^2.8.5",
@@ -28,12 +26,6 @@
   "devDependencies": {
     "nodemon": "^3.1.0"
   },
-  "keywords": [
-    "airguard",
-    "air-quality",
-    "openaq",
-    "mongodb",
-    "el-salvador"
-  ],
+  "keywords": ["airguard", "air-quality", "openaq", "mongodb", "el-salvador"],
   "license": "MIT"
 }

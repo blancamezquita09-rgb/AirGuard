@@ -26,18 +26,19 @@ async function saveMeasurements(measurements) {
 
 /**
  * Crea o actualiza una estación en la colección stations.
- * @param {Object} station  { openaq_id, name, zone, coordinates, active }
+ * Acepta tanto estaciones reales de OpenAQ como simuladas.
+ * @param {Object} station  { openaq_id, name, zone, coordinates, is_active }
  */
 async function upsertStation(station) {
   return Station.findOneAndUpdate(
     { openaq_id: station.openaq_id },
     {
       $set: {
-        name:         station.name,
-        zone:         station.zone ?? 'Centro',
-        coordinates:  station.coordinates,
-        active:       station.active ?? true,
-        last_updated: new Date(),
+        name:        station.name,
+        zone:        station.zone         ?? 'Centro',
+        coordinates: station.coordinates,
+        is_active:   station.is_active    ?? station.active ?? true,
+        last_update: new Date(),
       },
     },
     { upsert: true, new: true }
@@ -49,7 +50,7 @@ async function upsertStation(station) {
  * @returns {Promise<Array>}
  */
 async function getActiveStations() {
-  return Station.find({ active: true }, { __v: 0 }).lean();
+  return Station.find({ is_active: true }, { __v: 0 }).lean();
 }
 
 /**
@@ -97,26 +98,26 @@ async function getZoneComparison() {
     { $match: { timestamp: { $gte: since } } },
     {
       $lookup: {
-        from: 'stations',
-        localField: 'station_id',
+        from:         'stations',
+        localField:   'station_id',
         foreignField: 'openaq_id',
-        as: 'station',
+        as:           'station',
       },
     },
     { $unwind: '$station' },
     {
       $group: {
-        _id: '$station.zone',
-        avg_aqi: { $avg: '$aqi.value' },
-        max_aqi: { $max: '$aqi.value' },
+        _id:      '$station.zone',
+        avg_aqi:  { $avg: '$aqi.value' },
+        max_aqi:  { $max: '$aqi.value' },
         stations: { $addToSet: '$station_id' },
       },
     },
     {
       $project: {
-        zone: '$_id',
-        avg_aqi: { $round: ['$avg_aqi', 1] },
-        max_aqi: 1,
+        zone:          '$_id',
+        avg_aqi:       { $round: ['$avg_aqi', 1] },
+        max_aqi:       1,
         station_count: { $size: '$stations' },
       },
     },
