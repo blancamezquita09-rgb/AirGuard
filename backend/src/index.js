@@ -1,5 +1,5 @@
 /**
- * AirGuard Backend – Entry Point v0.8.3
+ * AirGuard Backend – Entry Point v0.9.0
  */
 
 require('dotenv').config();
@@ -21,10 +21,6 @@ const app  = express();
 const PORT = process.env.PORT || 3001;
 
 // ── Trust Proxy ───────────────────────────────────────────────────
-// Render (y cualquier plataforma con load balancer) pasa el IP real
-// del cliente en el header X-Forwarded-For.
-// Sin esta línea, express-rate-limit lanza ERR_ERL_UNEXPECTED_X_FORWARDED_FOR.
-// '1' = confiar en UN nivel de proxy (el de Render). Suficiente y seguro.
 app.set('trust proxy', 1);
 
 // ── Resolver ruta del frontend ────────────────────────────────────
@@ -33,9 +29,9 @@ function resolveFrontendDir() {
     return path.resolve(process.env.FRONTEND_DIR);
   }
   const candidates = [
-    path.join(__dirname, '..', 'public'),         // backend/public/ ← Render
-    path.join(__dirname, '..', '..', 'frontend'), // monorepo local
-    path.join(__dirname, '..', 'frontend'),       // backend/frontend/
+    path.join(__dirname, '..', 'public'),
+    path.join(__dirname, '..', '..', 'frontend'),
+    path.join(__dirname, '..', 'frontend'),
   ];
   for (const c of candidates) {
     if (fs.existsSync(path.join(c, 'index.html'))) return c;
@@ -64,7 +60,6 @@ app.use(morgan('combined'));
 app.use(express.json());
 
 // ── Rate Limiters ─────────────────────────────────────────────────
-// trust proxy ya está activo, así que express-rate-limit puede leer el IP real
 app.use('/api/v1', rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 300,
@@ -86,10 +81,11 @@ app.get('/health', (_req, res) => {
   res.json({
     status:    'ok',
     service:   'AirGuard API',
-    version:   '0.8.3',
+    version:   '0.9.0',
     timestamp: new Date().toISOString(),
     db:        require('mongoose').connection.readyState === 1 ? 'connected' : 'disconnected',
     frontend:  fs.existsSync(path.join(FRONTEND_DIR, 'index.html')) ? 'found' : 'missing',
+    mode:      process.env.SIMULATE_DATA === 'true' ? 'simulated' : 'real',
   });
 });
 
@@ -129,7 +125,9 @@ app.use((err, _req, res, _next) => {
 async function main() {
   await connectDB();
   app.listen(PORT, () => {
-    console.log(`\n🌿 AirGuard v0.8.3 — http://localhost:${PORT}`);
+    const mode = process.env.SIMULATE_DATA === 'true' ? '🎭 SIMULADO' : '🌐 REAL';
+    console.log(`\n🌿 AirGuard v0.9.0 — http://localhost:${PORT}`);
+    console.log(`   Modo datos:  ${mode}`);
     console.log(`   API:         http://localhost:${PORT}/api/v1`);
     console.log(`   Panel admin: http://localhost:${PORT}/panel-air`);
     console.log(`   Frontend:    ${FRONTEND_DIR}\n`);
