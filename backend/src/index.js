@@ -1,13 +1,5 @@
 /**
- * AirGuard Backend – Entry Point v0.8.1
- * - API pública /api/v1
- * - API suscripciones /api/v1/subscriptions
- * - API admin /api/admin
- * - Panel admin en /panel-air
- * - Frontend público servido como SPA
- *
- * FRONTEND_DIR puede configurarse via variable de entorno FRONTEND_DIR
- * para adaptarse a distintas estructuras en Render, Docker o local.
+ * AirGuard Backend – Entry Point v0.8.3
  */
 
 require('dotenv').config();
@@ -28,37 +20,33 @@ const { startScheduler }  = require('./scheduler');
 const app  = express();
 const PORT = process.env.PORT || 3001;
 
+// ── Trust Proxy ───────────────────────────────────────────────────
+// Render (y cualquier plataforma con load balancer) pasa el IP real
+// del cliente en el header X-Forwarded-For.
+// Sin esta línea, express-rate-limit lanza ERR_ERL_UNEXPECTED_X_FORWARDED_FOR.
+// '1' = confiar en UN nivel de proxy (el de Render). Suficiente y seguro.
+app.set('trust proxy', 1);
+
 // ── Resolver ruta del frontend ────────────────────────────────────
-// Orden de búsqueda:
-// 1. Variable de entorno FRONTEND_DIR (configurable en Render)
-// 2. ../public  (frontend copiado dentro del backend — recomendado en Render)
-// 3. ../../frontend (monorepo local: backend/src/index.js → ../../frontend)
 function resolveFrontendDir() {
   if (process.env.FRONTEND_DIR) {
     return path.resolve(process.env.FRONTEND_DIR);
   }
   const candidates = [
-    path.join(__dirname, '..', 'public'),          // backend/public/
-    path.join(__dirname, '..', '..', 'frontend'),  // monorepo local
-    path.join(__dirname, '..', 'frontend'),        // backend/frontend/
+    path.join(__dirname, '..', 'public'),         // backend/public/ ← Render
+    path.join(__dirname, '..', '..', 'frontend'), // monorepo local
+    path.join(__dirname, '..', 'frontend'),       // backend/frontend/
   ];
-  for (const candidate of candidates) {
-    if (fs.existsSync(path.join(candidate, 'index.html'))) {
-      return candidate;
-    }
+  for (const c of candidates) {
+    if (fs.existsSync(path.join(c, 'index.html'))) return c;
   }
-  // Fallback: devolver el primer candidato aunque no exista
-  // (el servidor arrancará igual, solo fallará al pedir /)
-  console.warn('[AirGuard] ⚠️  No se encontró index.html del frontend en ninguna ruta conocida.');
-  console.warn('[AirGuard]    Configura la variable FRONTEND_DIR en Render apuntando a la carpeta correcta.');
+  console.warn('[AirGuard] ⚠️  index.html no encontrado. Configura FRONTEND_DIR en Render.');
   return candidates[0];
 }
 
 const FRONTEND_DIR = resolveFrontendDir();
 const ADMIN_DIR    = path.join(__dirname, '..', 'admin');
-
-console.log(`[AirGuard] Frontend dir: ${FRONTEND_DIR}`);
-console.log(`[AirGuard] Admin dir:    ${ADMIN_DIR}`);
+console.log(`[AirGuard] Frontend: ${FRONTEND_DIR}`);
 
 // ── CORS ──────────────────────────────────────────────────────────
 const allowedOrigins = process.env.FRONTEND_URL
@@ -76,14 +64,19 @@ app.use(morgan('combined'));
 app.use(express.json());
 
 // ── Rate Limiters ─────────────────────────────────────────────────
+// trust proxy ya está activo, así que express-rate-limit puede leer el IP real
 app.use('/api/v1', rateLimit({
-  windowMs: 15 * 60 * 1000, max: 300,
-  standardHeaders: true, legacyHeaders: false,
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { error: 'Demasiadas peticiones. Intenta en 15 minutos.' },
 }));
 app.use('/api/admin/login', rateLimit({
-  windowMs: 15 * 60 * 1000, max: 10,
-  standardHeaders: true, legacyHeaders: false,
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
   skipSuccessfulRequests: true,
   message: { error: 'Demasiados intentos de login. Espera 15 minutos.' },
 }));
@@ -93,7 +86,7 @@ app.get('/health', (_req, res) => {
   res.json({
     status:    'ok',
     service:   'AirGuard API',
-    version:   '0.8.1',
+    version:   '0.8.3',
     timestamp: new Date().toISOString(),
     db:        require('mongoose').connection.readyState === 1 ? 'connected' : 'disconnected',
     frontend:  fs.existsSync(path.join(FRONTEND_DIR, 'index.html')) ? 'found' : 'missing',
@@ -101,30 +94,27 @@ app.get('/health', (_req, res) => {
 });
 
 // ── Rutas API ─────────────────────────────────────────────────────
-app.use('/api/v1',   apiRouter);
-app.use('/api/v1',   subscriptionsRouter);
+app.use('/api/v1',    apiRouter);
+app.use('/api/v1',    subscriptionsRouter);
 app.use('/api/admin', adminRouter);
 
-// ── Panel Admin (ruta oculta) ─────────────────────────────────────
+// ── Panel Admin ───────────────────────────────────────────────────
 if (fs.existsSync(ADMIN_DIR)) {
   app.use('/panel-air', express.static(ADMIN_DIR));
   app.get('/panel-air*', (_req, res) => {
-    const adminIndex = path.join(ADMIN_DIR, 'index.html');
-    if (fs.existsSync(adminIndex)) return res.sendFile(adminIndex);
-    res.status(404).send('Panel admin no encontrado.');
+    const f = path.join(ADMIN_DIR, 'index.html');
+    fs.existsSync(f) ? res.sendFile(f) : res.status(404).send('Panel no encontrado.');
   });
 }
 
-// ── Frontend Público (SPA) ────────────────────────────────────────
+// ── Frontend SPA ──────────────────────────────────────────────────
 app.use(express.static(FRONTEND_DIR));
 app.get('*', (_req, res) => {
-  const indexPath = path.join(FRONTEND_DIR, 'index.html');
-  if (fs.existsSync(indexPath)) {
-    return res.sendFile(indexPath);
-  }
+  const f = path.join(FRONTEND_DIR, 'index.html');
+  if (fs.existsSync(f)) return res.sendFile(f);
   res.status(503).json({
     error: 'Frontend no encontrado.',
-    hint: 'Configura la variable FRONTEND_DIR en Render apuntando a la carpeta que contiene index.html.',
+    hint:  'Configura FRONTEND_DIR en Render apuntando a la carpeta con index.html.',
     tried: FRONTEND_DIR,
   });
 });
@@ -139,7 +129,7 @@ app.use((err, _req, res, _next) => {
 async function main() {
   await connectDB();
   app.listen(PORT, () => {
-    console.log(`\n🌿 AirGuard v0.8.1 — http://localhost:${PORT}`);
+    console.log(`\n🌿 AirGuard v0.8.3 — http://localhost:${PORT}`);
     console.log(`   API:         http://localhost:${PORT}/api/v1`);
     console.log(`   Panel admin: http://localhost:${PORT}/panel-air`);
     console.log(`   Frontend:    ${FRONTEND_DIR}\n`);
