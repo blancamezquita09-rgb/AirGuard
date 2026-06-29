@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#2196F3"/>
+<meta name="description" content="Monitoreo ciudadano de calidad del aire en San Salvador, El Salvador"/>
+<link rel="manifest" href="/manifest.json"/>
+<link rel="apple-touch-icon" href="/icon-192.png"/>
+<title>AirGuard – Calidad del Aire · San Salvador</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --sky:#e8f4fd;--sky-mid:#bde0f8;--primary:#2196f3;--primary-dark:#1565c0;
+  --surface:#fff;--surface-2:#f0f7ff;--border:#d0e8f8;
+  --text:#1a2b3c;--text-muted:#5a7a9a;
+  --green:#4caf50;--yellow:#ffc107;--orange:#ff9800;--red:#f44336;--purple:#9c27b0;
+  --radius:16px;--shadow:0 4px 24px rgba(33,150,243,.10);--shadow-sm:0 2px 8px rgba(33,150,243,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,#e8f4fd 0%,#f0f7ff 50%,#e3f2fd 100%);color:var(--text);min-height:100vh;}
+
+/* NAV */
+nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:1000;box-shadow:var(--shadow-sm);}
+.nav-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1.05rem;color:var(--primary-dark);}
+.nav-tabs{display:flex;gap:3px;background:var(--sky);border-radius:12px;padding:4px;}
+.nav-tab{padding:5px 11px;border:none;background:transparent;border-radius:9px;cursor:pointer;font-size:0.75rem;font-weight:500;color:var(--text-muted);transition:all .2s;white-space:nowrap;}
+.nav-tab.active{background:var(--primary);color:#fff;box-shadow:0 2px 8px rgba(33,150,243,.3);}
+.nav-right{display:flex;align-items:center;gap:10px;}
+
+/* REFRESH COUNTER */
+.refresh-badge{display:flex;align-items:center;gap:5px;font-size:0.72rem;color:var(--text-muted);background:var(--sky);border:1px solid var(--border);border-radius:20px;padding:4px 10px;cursor:pointer;transition:background .2s;user-select:none;}
+.refresh-badge:hover{background:var(--sky-mid);}
+.refresh-badge .pulse{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0;}
+.refresh-badge .pulse.syncing{background:var(--primary);animation:spin 1s linear infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* LAYOUT */
+.app{max-width:960px;margin:0 auto;padding:18px 14px 100px;}
+.page{display:none;}.page.active{display:block;}
+
+/* SKELETON */
+.skeleton{background:linear-gradient(90deg,#e8f0f8 25%,#d0e4f4 50%,#e8f0f8 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px;}
+
+/* HERO */
+.hero-card{background:var(--surface);border-radius:var(--radius);padding:22px;margin-bottom:16px;box-shadow:var(--shadow);border:1px solid var(--border);display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+.aqi-circle{width:106px;height:106px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;border:5px solid;transition:all .4s ease;}
+.aqi-circle .aqi-num{font-size:2.1rem;font-weight:800;line-height:1;}
+.aqi-circle .aqi-label{font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+.hero-info{flex:1;min-width:180px;}
+.hero-info h2{font-size:1.2rem;font-weight:700;margin-bottom:3px;}
+.hero-sub{font-size:0.82rem;color:var(--text-muted);margin-bottom:8px;}
+.hero-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;font-size:0.78rem;font-weight:600;}
+.hero-rec{border-radius:11px;padding:11px 14px;font-size:0.8rem;margin-top:10px;display:flex;align-items:flex-start;gap:7px;background:#e8f5e9;border:1px solid #a5d6a7;color:#2e7d32;}
+.hero-stats{display:flex;gap:18px;margin-top:12px;flex-wrap:wrap;}
+.hero-stat{text-align:center;}
+.hero-stat .stat-val{font-size:1.05rem;font-weight:700;}
+.hero-stat .stat-lbl{font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;}
+
+/* ACTION BUTTONS BAR */
+.action-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.btn-action{display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--border);background:var(--surface);border-radius:10px;font-size:0.78rem;font-weight:600;color:var(--text-muted);cursor:pointer;transition:all .2s;text-decoration:none;}
+.btn-action:hover{background:var(--primary);color:#fff;border-color:var(--primary);}
+.btn-action.green:hover{background:#2e7d32;border-color:#2e7d32;}
+.btn-action.wa:hover{background:#25D366;border-color:#25D366;}
+.btn-action.tw:hover{background:#000;border-color:#000;}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+
+/* POLLUTANT CARDS */
+.pollutant-card{background:var(--surface);border-radius:13px;padding:14px;box-shadow:var(--shadow-sm);border:1px solid var(--border);display:flex;flex-direction:column;gap:3px;overflow:hidden;transition:transform .2s,box-shadow .2s;cursor:default;}
+.pollutant-card:hover{transform:translateY(-2px);box-shadow:var(--shadow);}
+.p-name{font-size:0.67rem;font-weight:600;text-transform:uppercase;color:var(--text-muted);}
+.p-val{font-size:1.5rem;font-weight:800;color:var(--text);line-height:1;}
+.p-unit{font-size:0.65rem;color:var(--text-muted);}
+.p-status{font-size:0.68rem;font-weight:600;padding:2px 7px;border-radius:7px;align-self:flex-start;margin-top:3px;}
+.p-bar-bg{height:4px;background:#e0e0e0;border-radius:2px;margin-top:5px;}
+.p-bar{height:4px;border-radius:2px;transition:width .8s ease;}
+
+/* AQI COLOR CLASSES */
+.aqi-good{border-color:var(--green);color:var(--green);background:#f1faf1;}
+.badge-good,.status-good{background:#e8f5e9;color:#2e7d32;}
+.aqi-moderate{border-color:var(--yellow);color:#b8860b;background:#fffde7;}
+.badge-moderate,.status-moderate{background:#fff9c4;color:#795548;}
+.aqi-usg{border-color:var(--orange);color:var(--orange);background:#fff3e0;}
+.status-usg{background:#ffe0b2;color:#e65100;}
+.aqi-unhealthy{border-color:var(--red);color:var(--red);background:#ffebee;}
+.status-unhealthy{background:#ffcdd2;color:#b71c1c;}
+.aqi-vunhealthy{border-color:var(--purple);color:var(--purple);background:#f3e5f5;}
+.aqi-nodata{border-color:#bdbdbd;color:#757575;background:#f5f5f5;}
+
+/* SECTION */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
+.section-title{font-size:0.92rem;font-weight:700;display:flex;align-items:center;gap:6px;}
+.section-sub{font-size:0.72rem;color:var(--text-muted);}
+
+/* MAP */
+.map-card{background:var(--surface);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:16px;}
+#leaflet-map{height:320px;width:100%;}
+
+/* CHART */
+.chart-card{background:var(--surface);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:16px;}
+.chart-tabs{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap;}
+.chart-tab{padding:4px 11px;border-radius:8px;border:1px solid var(--border);background:var(--sky);cursor:pointer;font-size:0.72rem;font-weight:500;color:var(--text-muted);transition:all .2s;}
+.chart-tab.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+#chart-container{width:100%;height:190px;}
+
+/* COMPARE */
+.compare-card{background:var(--surface);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:16px;}
+.zone-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);}
+.zone-row:last-child{border-bottom:none;}
+.zone-name{font-weight:600;font-size:0.85rem;flex:1;}
+.zone-aqi-val{font-weight:800;font-size:1.05rem;}
+.zone-bar-wrap{flex:2;}
+.zone-bar-bg{height:7px;background:#e0ecf8;border-radius:4px;}
+.zone-bar{height:7px;border-radius:4px;transition:width .8s ease;}
+
+/* SUBSCRIBE SECTION */
+.subscribe-card{background:linear-gradient(135deg,#1565c0 0%,#1e88e5 100%);border-radius:var(--radius);padding:22px;margin-bottom:16px;color:#fff;box-shadow:0 4px 24px rgba(21,101,192,.25);}
+.subscribe-card h3{font-size:1.05rem;font-weight:700;margin-bottom:4px;}
+.subscribe-card p{font-size:0.82rem;opacity:.85;margin-bottom:16px;}
+.subscribe-form{display:flex;gap:8px;flex-wrap:wrap;}
+.subscribe-form input{flex:1;min-width:180px;padding:10px 14px;border:none;border-radius:10px;font-size:0.85rem;outline:none;color:var(--text);}
+.subscribe-form select{padding:10px 12px;border:none;border-radius:10px;font-size:0.82rem;color:var(--text);background:#fff;outline:none;}
+.btn-subscribe{padding:10px 20px;background:#fff;color:var(--primary-dark);border:none;border-radius:10px;font-weight:700;font-size:0.85rem;cursor:pointer;transition:opacity .2s;white-space:nowrap;}
+.btn-subscribe:hover{opacity:.9;}
+.push-row{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.2);}
+.push-row p{font-size:0.78rem;opacity:.85;flex:1;}
+.btn-push{padding:8px 16px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:9px;color:#fff;font-size:0.78rem;font-weight:600;cursor:pointer;transition:background .2s;white-space:nowrap;}
+.btn-push:hover{background:rgba(255,255,255,.35);}
+.subscribe-status{margin-top:10px;font-size:0.78rem;padding:8px 12px;border-radius:8px;display:none;}
+.subscribe-status.show{display:block;}
+.subscribe-status.ok{background:rgba(76,175,80,.25);border:1px solid rgba(76,175,80,.5);}
+.subscribe-status.err{background:rgba(244,67,54,.25);border:1px solid rgba(244,67,54,.5);}
+
+/* ALERTS */
+.alerts-list{display:flex;flex-direction:column;gap:10px;}
+.alert-item{background:var(--surface);border-radius:12px;padding:13px 15px;border-left:4px solid;box-shadow:var(--shadow-sm);display:flex;gap:11px;align-items:flex-start;}
+.alert-title{font-weight:600;font-size:0.85rem;}
+.alert-desc{font-size:0.78rem;color:var(--text-muted);margin-top:2px;}
+.alert-time{font-size:0.68rem;color:var(--text-muted);margin-top:5px;}
+
+/* OFFLINE BANNER */
+.offline-banner{display:none;background:#ff9800;color:#fff;text-align:center;padding:8px;font-size:0.8rem;font-weight:600;position:sticky;top:60px;z-index:999;}
+.offline-banner.show{display:block;}
+
+/* PDF export overlay */
+#pdf-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;}
+#pdf-overlay.show{display:flex;}
+.pdf-box{background:#fff;border-radius:16px;padding:28px 32px;text-align:center;max-width:340px;}
+.pdf-box h3{font-size:1.1rem;font-weight:700;margin-bottom:8px;color:var(--primary-dark);}
+.pdf-box p{font-size:0.82rem;color:var(--text-muted);margin-bottom:18px;}
+.pdf-buttons{display:flex;gap:10px;justify-content:center;}
+.btn-pdf-confirm{padding:10px 22px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;}
+.btn-pdf-cancel{padding:10px 18px;background:#f0f4f8;color:var(--text);border:1px solid var(--border);border-radius:10px;cursor:pointer;}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:18px;padding:11px 18px;border-radius:10px;font-size:0.84rem;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.15);transform:translateY(80px);opacity:0;transition:all .3s ease;z-index:3000;max-width:320px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{background:#1b5e20;color:#fff;}
+.toast.error{background:#b71c1c;color:#fff;}
+.toast.info{background:#1565c0;color:#fff;}
+
+@media(max-width:600px){
+  .grid-2{grid-template-columns:1fr 1fr;gap:8px;}
+  .grid-3{grid-template-columns:repeat(3,1fr);gap:7px;}
+  .hero-card{padding:16px;gap:14px;}
+  .aqi-circle{width:90px;height:90px;}
+  .aqi-circle .aqi-num{font-size:1.8rem;}
+  nav{padding:0 10px;}
+  .nav-tab{padding:5px 8px;font-size:0.7rem;}
+  .action-bar{gap:6px;}
+  .btn-action{padding:7px 10px;font-size:0.72rem;}
+  .subscribe-form{flex-direction:column;}
+}
+</style>
+</head>
+<body>
+
+<!-- OFFLINE BANNER -->
+<div class="offline-banner" id="offline-banner">📵 Sin conexión — mostrando datos en caché</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">🌿 AirGuard</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('home',this)">Inicio</button>
+    <button class="nav-tab" onclick="showPage('map',this)">Mapa</button>
+    <button class="nav-tab" onclick="showPage('history',this)">Historia</button>
+    <button class="nav-tab" onclick="showPage('compare',this)">Zonas</button>
+  </div>
+  <div class="nav-right">
+    <div class="refresh-badge" id="refresh-badge" onclick="manualRefresh()" title="Clic para actualizar ahora">
+      <div class="pulse" id="pulse-dot"></div>
+      <span id="refresh-countdown">–</span>
+    </div>
+  </div>
+</nav>
+
+<div class="app">
+
+<!-- ════ HOME ════ -->
+<div class="page active" id="page-home">
+
+  <!-- HERO -->
+  <div class="hero-card" id="hero-card">
+    <div class="aqi-circle aqi-nodata" id="aqi-circle">
+      <span class="aqi-num" id="aqi-num">–</span>
+      <span class="aqi-label">ICA</span>
+    </div>
+    <div class="hero-info">
+      <h2 id="hero-category">Cargando datos...</h2>
+      <div class="hero-sub" id="hero-sub">San Salvador · <span id="hero-time">–</span></div>
+      <div class="hero-rec" id="hero-rec">🌿 Obteniendo información de calidad del aire...</div>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="stat-val" id="stat-stations">–</div><div class="stat-lbl">Estaciones</div></div>
+        <div class="hero-stat"><div class="stat-val" id="stat-max">–</div><div class="stat-lbl">AQI Máx</div></div>
+        <div class="hero-stat"><div class="stat-val" id="stat-pollutant">–</div><div class="stat-lbl">Contaminante</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTION BAR -->
+  <div class="action-bar">
+    <button class="btn-action" onclick="exportPDF()" title="Exportar reporte PDF">📄 Exportar PDF</button>
+    <button class="btn-action wa" onclick="shareWhatsApp()" title="Compartir en WhatsApp">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+      WhatsApp
+    </button>
+    <button class="btn-action tw" onclick="shareTwitter()" title="Compartir en X/Twitter">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      X / Twitter
+    </button>
+  </div>
+
+  <!-- POLLUTANTS -->
+  <div class="section-header">
+    <div class="section-title">💨 Contaminantes</div>
+    <div class="section-sub" id="pollutants-time">–</div>
+  </div>
+  <div class="grid-3" id="pollutants-grid">
+    <div class="pollutant-card"><div class="p-name">PM2.5</div><div class="p-val skeleton" style="height:32px;width:60px">&nbsp;</div></div>
+    <div class="pollutant-card"><div class="p-name">PM10</div><div class="p-val skeleton" style="height:32px;width:60px">&nbsp;</div></div>
+    <div class="pollutant-card"><div class="p-name">NO₂</div><div class="p-val skeleton" style="height:32px;width:60px">&nbsp;</div></div>
+    <div class="pollutant-card"><div class="p-name">O₃</div><div class="p-val skeleton" style="height:32px;width:60px">&nbsp;</div></div>
+    <div class="pollutant-card"><div class="p-name">CO</div><div class="p-val skeleton" style="height:32px;width:60px">&nbsp;</div></div>
+    <div class="pollutant-card"><div class="p-name">SO₂</div><div class="p-val skeleton" style="height:32px;width:60px">&nbsp;</div></div>
+  </div>
+
+  <!-- SUSCRIPCIÓN -->
+  <div class="subscribe-card">
+    <h3>🔔 Recibe alertas de calidad del aire</h3>
+    <p>Te avisamos por email y notificación push cuando el ICA supere tu umbral elegido.</p>
+    <div class="subscribe-form">
+      <input type="email" id="sub-email" placeholder="tu@email.com"/>
+      <select id="sub-threshold">
+        <option value="50">Desde Moderado (ICA 50+)</option>
+        <option value="100" selected>Grupos sensibles (ICA 100+)</option>
+        <option value="150">Dañino (ICA 150+)</option>
+        <option value="200">Muy dañino (ICA 200+)</option>
+      </select>
+      <button class="btn-subscribe" onclick="subscribe()">Suscribirme</button>
+    </div>
+    <div class="push-row">
+      <p>También puedes activar notificaciones push del navegador para recibir alertas instantáneas.</p>
+      <button class="btn-push" id="btn-push" onclick="requestPush()">🔔 Activar push</button>
+    </div>
+    <div class="subscribe-status" id="sub-status"></div>
+  </div>
+
+  <!-- ALERTAS -->
+  <div class="section-header">
+    <div class="section-title">🚨 Alertas Recientes</div>
+  </div>
+  <div class="alerts-list" id="alerts-list">
+    <div class="alert-item" style="border-color:#bdbdbd">
+      <div>
+        <div class="alert-title" style="color:#757575">Sin alertas activas</div>
+        <div class="alert-desc">La calidad del aire se encuentra dentro de rangos normales.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MAP ════ -->
+<div class="page" id="page-map">
+  <div class="section-header" style="margin-top:4px">
+    <div class="section-title">🗺️ Mapa de Estaciones</div>
+    <div class="section-sub" id="map-update-time">–</div>
+  </div>
+  <div class="map-card">
+    <div id="leaflet-map"></div>
+  </div>
+  <div class="compare-card" id="stations-list-card">
+    <div class="section-title" style="margin-bottom:12px">📡 Estaciones activas</div>
+    <div id="stations-list">Cargando...</div>
+  </div>
+</div>
+
+<!-- ════ HISTORY ════ -->
+<div class="page" id="page-history">
+  <div class="section-header" style="margin-top:4px">
+    <div class="section-title">📈 Tendencia Histórica</div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-tabs" id="chart-tabs">
+      <button class="chart-tab active" onclick="loadChart('pm25',this)">PM2.5</button>
+      <button class="chart-tab" onclick="loadChart('pm10',this)">PM10</button>
+      <button class="chart-tab" onclick="loadChart('no2',this)">NO₂</button>
+      <button class="chart-tab" onclick="loadChart('o3',this)">O₃</button>
+      <button class="chart-tab" onclick="loadChart('co',this)">CO</button>
+    </div>
+    <div id="chart-container">
+      <canvas id="chart-canvas"></canvas>
+    </div>
+    <div style="text-align:center;font-size:0.72rem;color:var(--text-muted);margin-top:8px">Últimas 24 horas · San Salvador</div>
+  </div>
+  <div class="action-bar">
+    <button class="btn-action" onclick="exportPDF()">📄 Exportar reporte PDF</button>
+  </div>
+</div>
+
+<!-- ════ COMPARE ════ -->
+<div class="page" id="page-compare">
+  <div class="section-header" style="margin-top:4px">
+    <div class="section-title">📊 Comparativa por Zona</div>
+  </div>
+  <div class="compare-card">
+    <div id="zones-list">Cargando...</div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<!-- PDF OVERLAY -->
+<div id="pdf-overlay">
+  <div class="pdf-box">
+    <h3>📄 Generar Reporte PDF</h3>
+    <p>Se capturará el dashboard actual con los datos de calidad del aire de San Salvador.</p>
+    <div class="pdf-buttons">
+      <button class="btn-pdf-confirm" id="btn-pdf-confirm" onclick="generatePDF()">Generar PDF</button>
+      <button class="btn-pdf-cancel" onclick="closePDFOverlay()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════════════════════════
+const API          = '/api/v1';
+const REFRESH_MS   = 90_000; // 90 segundos
+let refreshTimer   = null;
+let countdownTimer = null;
+let secondsLeft    = REFRESH_MS / 1000;
+let currentData    = null;
+let chartInstance  = null;
+let leafletMap     = null;
+let markers        = [];
+
+// ════════════════════════════════════════════════════════════════
+// OFFLINE DETECTION
+// ════════════════════════════════════════════════════════════════
+window.addEventListener('online',  () => { document.getElementById('offline-banner').classList.remove('show'); toast('Conexión restaurada', 'success'); fetchAll(); });
+window.addEventListener('offline', () => { document.getElementById('offline-banner').classList.add('show'); toast('Sin conexión a internet', 'error'); });
+if (!navigator.onLine) document.getElementById('offline-banner').classList.add('show');
+
+// ════════════════════════════════════════════════════════════════
+// SERVICE WORKER + PWA
+// ════════════════════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
+// ════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════════════════════════
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'map' && !leafletMap) initMap();
+  if (name === 'history') loadChart('pm25', document.querySelector('.chart-tab'));
+  if (name === 'compare') loadZones();
+}
+
+// ════════════════════════════════════════════════════════════════
+// REFRESH COUNTER
+// ════════════════════════════════════════════════════════════════
+function startCountdown() {
+  secondsLeft = REFRESH_MS / 1000;
+  clearInterval(countdownTimer);
+  countdownTimer = setInterval(() => {
+    secondsLeft = Math.max(0, secondsLeft - 1);
+    const el = document.getElementById('refresh-countdown');
+    if (el) el.textContent = secondsLeft > 0 ? `${secondsLeft}s` : 'actualizando...';
+  }, 1000);
+}
+
+function setSyncing(val) {
+  const dot = document.getElementById('pulse-dot');
+  if (dot) dot.classList.toggle('syncing', val);
+}
+
+function manualRefresh() {
+  clearInterval(refreshTimer);
+  clearInterval(countdownTimer);
+  fetchAll();
+  refreshTimer = setInterval(fetchAll, REFRESH_MS);
+}
+
+// ════════════════════════════════════════════════════════════════
+// DATA FETCH
+// ════════════════════════════════════════════════════════════════
+async function apiFetch(path) {
+  const res = await fetch(API + path);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function fetchAll() {
+  setSyncing(true);
+  try {
+    const [summary, latest] = await Promise.all([
+      apiFetch('/aqi/summary'),
+      apiFetch('/measurements/latest'),
+    ]);
+    currentData = { summary: summary.data, measurements: latest.data };
+    renderHero(summary.data);
+    renderPollutants(latest.data);
+    if (leafletMap) updateMapMarkers(latest.data);
+    startCountdown();
+  } catch (err) {
+    console.error('[AirGuard] Fetch error:', err.message);
+    toast('No se pudo actualizar. Reintentando...', 'error');
+  } finally {
+    setSyncing(false);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// AQI HELPERS
+// ════════════════════════════════════════════════════════════════
+function aqiClass(val) {
+  if (!val || val <= 0) return 'nodata';
+  if (val <= 50)  return 'good';
+  if (val <= 100) return 'moderate';
+  if (val <= 150) return 'usg';
+  if (val <= 200) return 'unhealthy';
+  return 'vunhealthy';
+}
+function aqiColor(val) {
+  if (!val || val <= 0) return '#bdbdbd';
+  if (val <= 50)  return '#4caf50';
+  if (val <= 100) return '#ffc107';
+  if (val <= 150) return '#ff9800';
+  if (val <= 200) return '#f44336';
+  return '#9c27b0';
+}
+function recText(cat) {
+  const m = {
+    'Buena':'🌿 Calidad excelente. Ideal para actividades al aire libre.',
+    'Moderada':'😷 Calidad aceptable. Grupos sensibles limiten esfuerzo prolongado.',
+    'Dañino para grupos sensibles':'⚠️ Niños y adultos mayores deben reducir actividad exterior.',
+    'Dañino':'🚫 Limita el tiempo al aire libre. Usa mascarilla si sales.',
+    'Muy dañino':'🚨 Evita el exterior. Cierra ventanas y usa purificador de aire.',
+    'Peligroso':'☣️ Permanece en interiores. Sigue instrucciones de las autoridades.',
+  };
+  return m[cat] || '📊 Monitoreando calidad del aire...';
+}
+const pollutantLimits = {pm25:35.4,pm10:154,no2:100,o3:100,so2:35,co:9};
+
+// ════════════════════════════════════════════════════════════════
+// RENDER HERO
+// ════════════════════════════════════════════════════════════════
+function renderHero(data) {
+  if (!data) return;
+  const aqi  = data.avg_aqi ?? 0;
+  const cat  = data.category ?? 'Sin datos';
+  const cls  = aqiClass(aqi);
+  const circle = document.getElementById('aqi-circle');
+  circle.className = `aqi-circle aqi-${cls}`;
+  document.getElementById('aqi-num').textContent      = aqi || '–';
+  document.getElementById('hero-category').textContent = cat;
+  document.getElementById('hero-sub').innerHTML       = `San Salvador &nbsp;·&nbsp; <span id="hero-time">${new Date().toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'})}</span>`;
+  document.getElementById('stat-stations').textContent = data.station_count ?? '–';
+  document.getElementById('stat-max').textContent      = data.max_aqi ?? '–';
+  document.getElementById('stat-pollutant').textContent = (data.dominant_pollutant ?? '–').toUpperCase();
+  const rec = document.getElementById('hero-rec');
+  rec.textContent = recText(cat);
+  rec.style.background = aqi > 100 ? '#fff3e0' : '#e8f5e9';
+  rec.style.borderColor = aqi > 100 ? '#ffcc80' : '#a5d6a7';
+  rec.style.color       = aqi > 100 ? '#e65100' : '#2e7d32';
+}
+
+// ════════════════════════════════════════════════════════════════
+// RENDER POLLUTANTS
+// ════════════════════════════════════════════════════════════════
+function renderPollutants(measurements) {
+  const grid = document.getElementById('pollutants-grid');
+  if (!measurements?.length) return;
+
+  // Promediar pollutants de todas las estaciones
+  const totals = {}, counts = {};
+  for (const m of measurements) {
+    for (const [k, v] of Object.entries(m.pollutants ?? {})) {
+      if (v > 0) { totals[k] = (totals[k] || 0) + v; counts[k] = (counts[k] || 0) + 1; }
+    }
+  }
+  const avgs = {};
+  for (const k in totals) avgs[k] = totals[k] / counts[k];
+
+  const pollutants = [
+    {key:'pm25', label:'PM2.5', unit:'µg/m³'},
+    {key:'pm10', label:'PM10',  unit:'µg/m³'},
+    {key:'no2',  label:'NO₂',   unit:'µg/m³'},
+    {key:'o3',   label:'O₃',    unit:'µg/m³'},
+    {key:'co',   label:'CO',    unit:'ppm'},
+    {key:'so2',  label:'SO₂',   unit:'µg/m³'},
+  ];
+
+  document.getElementById('pollutants-time').textContent = `Promedio ${measurements.length} estaciones`;
+
+  grid.innerHTML = pollutants.map(p => {
+    const val   = avgs[p.key] ?? 0;
+    const limit = pollutantLimits[p.key] || 100;
+    const pct   = Math.min(100, (val / limit) * 100);
+    const color = aqiColor(val > 0 ? Math.round((val/limit)*150) : 0);
+    const statusCls = val <= 0 ? 'status-good' : (pct < 50 ? 'status-good' : pct < 85 ? 'status-moderate' : 'status-unhealthy');
+    const statusLbl = val <= 0 ? 'Sin dato' : (pct < 50 ? 'Normal' : pct < 85 ? 'Moderado' : 'Alto');
+    return `<div class="pollutant-card">
+      <div class="p-name">${p.label}</div>
+      <div class="p-val">${val > 0 ? val.toFixed(1) : '–'}</div>
+      <div class="p-unit">${p.unit}</div>
+      <div class="p-status ${statusCls}">${statusLbl}</div>
+      <div class="p-bar-bg"><div class="p-bar" style="width:${pct}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════════
+// MAP
+// ════════════════════════════════════════════════════════════════
+function initMap() {
+  leafletMap = L.map('leaflet-map').setView([13.692, -89.218], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(leafletMap);
+  document.getElementById('map-update-time').textContent = new Date().toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
+  if (currentData?.measurements) updateMapMarkers(currentData.measurements);
+  else apiFetch('/measurements/latest').then(r => updateMapMarkers(r.data)).catch(()=>{});
+}
+
+function updateMapMarkers(measurements) {
+  markers.forEach(m => m.remove());
+  markers = [];
+  if (!measurements?.length) return;
+
+  const stationMap = {};
+  for (const m of measurements) {
+    const key = m.station_id;
+    if (!stationMap[key] || m.timestamp > stationMap[key].timestamp) stationMap[key] = m;
+  }
+
+  const list = document.getElementById('stations-list');
+  let listHTML = '';
+
+  for (const m of Object.values(stationMap)) {
+    const aqi   = m.aqi?.value ?? 0;
+    const color = aqiColor(aqi);
+    const cat   = m.aqi?.category ?? 'Sin datos';
+    const lat   = m.coordinates?.lat ?? m.location?.lat;
+    const lng   = m.coordinates?.lng ?? m.location?.lng;
+
+    if (lat && lng) {
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="background:${color};color:#fff;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)">${aqi||'?'}</div>`,
+        iconSize: [38,38], iconAnchor: [19,19],
+      });
+      const marker = L.marker([lat,lng],{icon}).addTo(leafletMap);
+      marker.bindPopup(`<b>${m.station_id}</b><br/>AQI: <b>${aqi}</b> (${cat})<br/>Actualizado: ${new Date(m.timestamp).toLocaleTimeString('es-SV')}`);
+      markers.push(marker);
+    }
+
+    listHTML += `<div class="zone-row">
+      <div class="zone-name">📡 ${m.station_id}</div>
+      <div class="zone-aqi-val" style="color:${color}">${aqi || '–'}</div>
+      <div class="zone-bar-wrap"><div class="zone-bar-bg"><div class="zone-bar" style="width:${Math.min(100,aqi/3)}%;background:${color}"></div></div></div>
+      <span style="font-size:.72rem;color:var(--text-muted)">${cat}</span>
+    </div>`;
+  }
+  if (list) list.innerHTML = listHTML || '<p style="color:var(--text-muted);padding:10px">Sin estaciones con datos.</p>';
+  document.getElementById('map-update-time').textContent = new Date().toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ════════════════════════════════════════════════════════════════
+// CHART (Chart.js)
+// ════════════════════════════════════════════════════════════════
+let currentPollutant = 'pm25';
+async function loadChart(pollutant, btn) {
+  currentPollutant = pollutant;
+  document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  try {
+    const stations = await apiFetch('/stations');
+    if (!stations.data?.length) { renderChart([], pollutant); return; }
+    const history = await apiFetch(`/measurements/${stations.data[0].openaq_id}/history?hours=24`);
+    renderChart(history.data || [], pollutant);
+  } catch (err) {
+    renderChart([], pollutant);
+  }
+}
+
+function renderChart(data, pollutant) {
+  const canvas = document.getElementById('chart-canvas');
+  const labels = data.map(d => new Date(d.timestamp).toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'}));
+  const values = data.map(d => {
+    const v = d.pollutants?.[pollutant];
+    return typeof v === 'number' ? v : (v?.value ?? 0);
+  });
+
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+  chartInstance = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: pollutant.toUpperCase(),
+        data: values,
+        borderColor: '#2196f3',
+        backgroundColor: 'rgba(33,150,243,.10)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 3,
+        pointBackgroundColor: '#2196f3',
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#5a7a9a', font: { size: 10 }, maxTicksLimit: 8 }, grid: { color: '#e8f0f8' } },
+        y: { ticks: { color: '#5a7a9a', font: { size: 10 } }, grid: { color: '#e8f0f8' }, beginAtZero: true },
+      }
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+// ZONES COMPARE
+// ════════════════════════════════════════════════════════════════
+async function loadZones() {
+  try {
+    const res = await apiFetch('/zones/compare');
+    const list = document.getElementById('zones-list');
+    if (!res.data?.length) { list.innerHTML = '<p style="color:var(--text-muted)">Sin datos de zona disponibles.</p>'; return; }
+    list.innerHTML = res.data.map(z => {
+      const color = aqiColor(z.avg_aqi);
+      return `<div class="zone-row">
+        <div class="zone-name">${z.zone || 'Sin zona'}</div>
+        <div class="zone-aqi-val" style="color:${color}">${Math.round(z.avg_aqi)}</div>
+        <div class="zone-bar-wrap"><div class="zone-bar-bg"><div class="zone-bar" style="width:${Math.min(100,z.avg_aqi/3)}%;background:${color}"></div></div></div>
+        <span style="font-size:.72rem;color:var(--text-muted)">${z.station_count} est.</span>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    document.getElementById('zones-list').innerHTML = '<p style="color:var(--text-muted)">Error cargando zonas.</p>';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// SUSCRIPCIÓN
+// ════════════════════════════════════════════════════════════════
+async function subscribe() {
+  const email = document.getElementById('sub-email').value.trim();
+  const threshold = parseInt(document.getElementById('sub-threshold').value);
+  const status = document.getElementById('sub-status');
+
+  if (!email || !/\S+@\S+\.\S+/.test(email)) {
+    showSubStatus('Ingresa un email válido.', 'err'); return;
+  }
+
+  try {
+    const res = await fetch(`${API}/subscribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, alert_threshold: threshold }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showSubStatus(data.error || 'Error al suscribirse.', 'err'); return; }
+    showSubStatus(`✅ ${data.message}`, 'ok');
+    document.getElementById('sub-email').value = '';
+    // Guardar email para push
+    localStorage.setItem('airguard_email', email);
+  } catch (e) {
+    showSubStatus('No se pudo conectar con el servidor.', 'err');
+  }
+}
+
+function showSubStatus(msg, type) {
+  const el = document.getElementById('sub-status');
+  el.textContent = msg;
+  el.className = `subscribe-status show ${type}`;
+  setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+// ════════════════════════════════════════════════════════════════
+// WEB PUSH
+// ════════════════════════════════════════════════════════════════
+async function requestPush() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+    toast('Tu navegador no soporta notificaciones push.', 'error'); return;
+  }
+  const email = document.getElementById('sub-email').value.trim() || localStorage.getItem('airguard_email');
+  if (!email) { showSubStatus('Primero ingresa tu email y suscríbete.', 'err'); return; }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') { toast('Permiso de notificaciones denegado.', 'error'); return; }
+
+  try {
+    // Obtener clave VAPID del servidor
+    const keyRes = await fetch(`${API}/vapid-public-key`);
+    if (!keyRes.ok) { toast('Notificaciones push no configuradas aún.', 'info'); return; }
+    const { vapidPublicKey } = await keyRes.json();
+
+    const reg = await navigator.serviceWorker.ready;
+    const subscription = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+    });
+
+    // Enviar suscripción al servidor
+    await fetch(`${API}/subscribe/push`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, push_subscription: subscription }),
+    });
+
+    document.getElementById('btn-push').textContent = '✅ Push activado';
+    document.getElementById('btn-push').disabled = true;
+    toast('¡Notificaciones push activadas!', 'success');
+  } catch (e) {
+    toast('Error al activar push: ' + e.message, 'error');
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g,'+').replace(/_/g,'/');
+  const raw = window.atob(base64);
+  const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
+
+// ════════════════════════════════════════════════════════════════
+// SHARE
+// ════════════════════════════════════════════════════════════════
+function shareWhatsApp() {
+  const aqi = currentData?.summary?.avg_aqi ?? '–';
+  const cat = currentData?.summary?.category ?? 'Sin datos';
+  const url = encodeURIComponent(window.location.origin);
+  const msg = encodeURIComponent(`🌿 AirGuard SV – Calidad del aire en San Salvador\n📊 ICA actual: *${aqi}* (${cat})\n🔗 Ver en vivo: ${decodeURIComponent(url)}`);
+  window.open(`https://wa.me/?text=${msg}`, '_blank');
+}
+
+function shareTwitter() {
+  const aqi = currentData?.summary?.avg_aqi ?? '–';
+  const cat = currentData?.summary?.category ?? 'Sin datos';
+  const url = encodeURIComponent(window.location.origin);
+  const msg = encodeURIComponent(`🌿 Calidad del aire en San Salvador: ICA ${aqi} (${cat})\nMonitoreo en tiempo real → ${decodeURIComponent(url)}\n#AirGuard #SanSalvador #CalidadDelAire`);
+  window.open(`https://twitter.com/intent/tweet?text=${msg}`, '_blank');
+}
+
+// ════════════════════════════════════════════════════════════════
+// PDF EXPORT
+// ════════════════════════════════════════════════════════════════
+function exportPDF() {
+  document.getElementById('pdf-overlay').classList.add('show');
+}
+function closePDFOverlay() {
+  document.getElementById('pdf-overlay').classList.remove('show');
+}
+
+async function generatePDF() {
+  const btn = document.getElementById('btn-pdf-confirm');
+  btn.textContent = 'Generando...';
+  btn.disabled = true;
+  closePDFOverlay();
+
+  // Ir a home para capturar
+  showPage('home', document.querySelector('.nav-tab'));
+
+  await new Promise(r => setTimeout(r, 400));
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    // Header
+    pdf.setFillColor(33, 150, 243);
+    pdf.rect(0, 0, 210, 28, 'F');
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(18); pdf.setFont(undefined, 'bold');
+    pdf.text('🌿 AirGuard – Reporte de Calidad del Aire', 14, 12);
+    pdf.setFontSize(9); pdf.setFont(undefined, 'normal');
+    pdf.text(`San Salvador, El Salvador · ${new Date().toLocaleDateString('es-SV',{weekday:'long',year:'numeric',month:'long',day:'numeric'})} · ${new Date().toLocaleTimeString('es-SV')}`, 14, 22);
+
+    // Datos principales
+    const aqi = currentData?.summary?.avg_aqi ?? '–';
+    const cat = currentData?.summary?.category ?? 'Sin datos';
+    const stations = currentData?.summary?.station_count ?? '–';
+
+    pdf.setTextColor(0,0,0);
+    pdf.setFontSize(13); pdf.setFont(undefined, 'bold');
+    pdf.text('Resumen General', 14, 38);
+
+    pdf.setFillColor(240, 247, 255);
+    pdf.roundedRect(14, 42, 182, 32, 3, 3, 'F');
+    pdf.setFontSize(28); pdf.setFont(undefined, 'bold');
+    pdf.setTextColor(33, 150, 243);
+    pdf.text(String(aqi), 30, 60);
+    pdf.setFontSize(11); pdf.setFont(undefined, 'normal');
+    pdf.setTextColor(80,80,80);
+    pdf.text(`Categoría: ${cat}`, 65, 52);
+    pdf.text(`Estaciones monitoreadas: ${stations}`, 65, 60);
+    pdf.text(`AQI Máximo: ${currentData?.summary?.max_aqi ?? '–'}`, 65, 68);
+
+    // Capturar grid de contaminantes con html2canvas
+    const grid = document.getElementById('pollutants-grid');
+    if (grid) {
+      pdf.setFontSize(13); pdf.setFont(undefined, 'bold'); pdf.setTextColor(0,0,0);
+      pdf.text('Contaminantes Atmosféricos', 14, 85);
+      const canvas = await html2canvas(grid, { scale: 1.5, backgroundColor: '#f0f7ff', logging: false });
+      const imgData = canvas.toDataURL('image/png');
+      const imgW = 182; const imgH = (canvas.height / canvas.width) * imgW;
+      pdf.addImage(imgData, 'PNG', 14, 89, imgW, Math.min(imgH, 80));
+    }
+
+    // Pie de página
+    pdf.setFontSize(8); pdf.setTextColor(150,150,150);
+    pdf.text('Reporte generado por AirGuard – Monitoreo Ciudadano de Calidad del Aire', 14, 285);
+    pdf.text('Datos proporcionados por OpenAQ · openaq.org', 14, 290);
+
+    const filename = `AirGuard-Reporte-${new Date().toISOString().split('T')[0]}.pdf`;
+    pdf.save(filename);
+    toast('📄 PDF generado exitosamente', 'success');
+  } catch (err) {
+    toast('Error al generar PDF: ' + err.message, 'error');
+  } finally {
+    btn.textContent = 'Generar PDF';
+    btn.disabled = false;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════════════════════════
+function toast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ════════════════════════════════════════════════════════════════
+// RENDER.YAML hint — ver backend/render.yaml
+// ════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════════
+(async () => {
+  await fetchAll();
+  refreshTimer = setInterval(fetchAll, REFRESH_MS);
+})();
+</script>
+</body>
+</html>
