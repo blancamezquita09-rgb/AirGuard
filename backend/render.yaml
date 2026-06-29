@@ -5,7 +5,9 @@ services:
     region: oregon
     plan: free
     rootDir: backend
-    buildCommand: npm install
+    # El buildCommand copia el frontend dentro del backend antes de arrancar
+    # Ajusta "../frontend" si tu repo tiene una estructura diferente
+    buildCommand: npm install && cp -r ../frontend ./public 2>/dev/null || echo "Frontend ya en ./public o no existe carpeta ../frontend"
     startCommand: node src/index.js
     healthCheckPath: /health
     envVars:
@@ -13,18 +15,27 @@ services:
         value: production
       - key: PORT
         value: 3001
+
+      # ── Base de datos ─────────────────────────────────────────
+      # Ingresa manualmente en el dashboard de Render
       - key: MONGODB_URI
-        sync: false   # ingresar manualmente en Render dashboard
+        sync: false
+
+      # ── OpenAQ ───────────────────────────────────────────────
       - key: OPENAQ_API_KEY
         sync: false
+      - key: OPENAQ_FETCH_INTERVAL_MS
+        value: 90000
+      - key: OPENAQ_DAILY_LIMIT
+        value: 1000
+
+      # ── Panel Admin ───────────────────────────────────────────
       - key: ADMIN_PASSWORD
         sync: false
       - key: ADMIN_JWT_SECRET
-        generateValue: true   # Render genera uno automáticamente
-      - key: VAPID_PUBLIC_KEY
-        sync: false
-      - key: VAPID_PRIVATE_KEY
-        sync: false
+        generateValue: true
+
+      # ── Alertas por Email (SMTP / Gmail) ──────────────────────
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT
@@ -35,14 +46,20 @@ services:
         sync: false
       - key: SMTP_PASS
         sync: false
-      - key: APP_URL
-        fromService:
-          type: web
-          name: airguard-backend
-          property: host
       - key: ALERT_AQI_THRESHOLD
         value: 100
-      - key: OPENAQ_FETCH_INTERVAL_MS
-        value: 90000
-      - key: OPENAQ_DAILY_LIMIT
-        value: 1000
+
+      # ── Web Push (VAPID) ──────────────────────────────────────
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+
+      # ── URLs ──────────────────────────────────────────────────
+      # APP_URL: la URL que Render te asigna, ej: https://airguard-backend.onrender.com
+      - key: APP_URL
+        sync: false
+      # FRONTEND_DIR: ruta DENTRO del contenedor donde está index.html
+      # Con el buildCommand anterior, el frontend queda en ./public
+      - key: FRONTEND_DIR
+        value: /opt/render/project/src/public
