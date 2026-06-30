@@ -2,7 +2,7 @@
 
 Servidor Node.js/Express que sirve la API REST, el frontend estático y el panel de administración de AirGuard.
 
-**Versión:** 0.8.3 | **Plataforma:** Render (Node 20) | **DB:** MongoDB Atlas
+**Versión:** 0.9.0 | **Plataforma:** Render (Node 20) | **DB:** MongoDB Atlas
 
 ---
 
@@ -146,4 +146,4 @@ curl https://tu-app.onrender.com/api/admin/stations \
 
 ---
 
-*AirGuard v0.8.3 · 2026-06-28*
+*AirGuard v0.9.0 · 2026-06-29*
