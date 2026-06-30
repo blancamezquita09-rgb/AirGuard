@@ -13,9 +13,10 @@ const {
 } = require('../db/measurementService');
 
 // ── GET /stations ────────────────────────────────────────────────
+// NOTA: el campo en el modelo es 'is_active', no 'active'
 router.get('/stations', async (_req, res, next) => {
   try {
-    const stations = await Station.find({ active: true }).select('-__v').lean();
+    const stations = await Station.find({ is_active: true }).select('-__v').lean();
     res.json({ success: true, data: stations });
   } catch (err) { next(err); }
 });
@@ -30,14 +31,18 @@ router.get('/stations/:id', async (req, res, next) => {
 });
 
 // ── GET /measurements/latest ─────────────────────────────────────
+// Solo devuelve mediciones con AQI > 0 (ignora residuos de OpenAQ sin datos)
 router.get('/measurements/latest', async (_req, res, next) => {
   try {
     const data = await getLatestMeasurements();
+    // Filtrar estaciones sin datos válidos solo si hay datos simulados disponibles
+    const validData = data.filter(m => m.aqi?.value > 0);
+    const result = validData.length > 0 ? validData : data;
     res.json({
-      success: true,
+      success:   true,
       timestamp: new Date().toISOString(),
-      count: data.length,
-      data,
+      count:     result.length,
+      data:      result,
     });
   } catch (err) { next(err); }
 });
@@ -62,7 +67,12 @@ router.get('/zones/compare', async (_req, res, next) => {
 // ── GET /aqi/summary ────────────────────────────────────────────
 router.get('/aqi/summary', async (_req, res, next) => {
   try {
-    const latest = await getLatestMeasurements();
+    const all = await getLatestMeasurements();
+    // Preferir mediciones con AQI válido
+    const latest = all.filter(m => m.aqi?.value > 0).length > 0
+      ? all.filter(m => m.aqi?.value > 0)
+      : all;
+
     if (!latest.length) {
       return res.json({ success: true, data: null });
     }
@@ -77,14 +87,14 @@ router.get('/aqi/summary', async (_req, res, next) => {
     res.json({
       success: true,
       data: {
-        city: 'San Salvador',
-        avg_aqi: Math.round(avgAqi),
-        max_aqi: maxAqi,
+        city:          'San Salvador',
+        avg_aqi:       Math.round(avgAqi),
+        max_aqi:       maxAqi,
         category,
         color,
         worst_station: worstStation?.station_id ?? null,
         station_count: latest.length,
-        timestamp: new Date().toISOString(),
+        timestamp:     new Date().toISOString(),
       },
     });
   } catch (err) { next(err); }
