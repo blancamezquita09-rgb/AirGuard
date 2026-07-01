@@ -113,19 +113,19 @@ function enrichMeasurements(rawData) {
 // ── Discovery ─────────────────────────────────────────────────────
 
 async function runDiscover() {
-  // En modo simulado forzado, no consumir quota de OpenAQ
-  if (FORCE_SIMULATE) {
-    console.log('[Scheduler] Modo SIMULADO forzado — cargando estaciones locales...');
-    await seedSimulatedStations();
-    return;
-  }
-
-  if (!canMakeRequest(1)) {
-    console.warn('[Scheduler] Sin quota para discovery.');
-    return;
-  }
-
   try {
+    // En modo simulado forzado, no consumir quota de OpenAQ
+    if (FORCE_SIMULATE) {
+      console.log('[Scheduler] Modo SIMULADO forzado — cargando estaciones locales...');
+      await seedSimulatedStations();
+      return;
+    }
+
+    if (!canMakeRequest(1)) {
+      console.warn('[Scheduler] Sin quota para discovery.');
+      return;
+    }
+
     console.log('[Scheduler] Descubriendo estaciones de El Salvador en OpenAQ...');
     const stations = await discoverStations();
     requestsToday++;
@@ -148,7 +148,7 @@ async function runDiscover() {
     console.error('[Scheduler] ❌ Error en discovery:', err.message);
     console.warn('[Scheduler] 🔄 Fallback a modo SIMULADO por error en OpenAQ.');
     usingSimulation = true;
-    await seedSimulatedStations();
+    await seedSimulatedStations().catch((e) => console.error('[seedSimulatedStations]', e.message));
   }
 }
 
@@ -167,29 +167,30 @@ async function seedSimulatedStations() {
 // ── Fetch / Generate ──────────────────────────────────────────────
 
 async function runFetch() {
-  if (activeLocationIds.length === 0) {
-    console.warn('[Scheduler] Sin estaciones. Esperando discovery...');
-    return;
-  }
-
-  // ── MODO SIMULADO ─────────────────────────────────────────────
-  if (usingSimulation || FORCE_SIMULATE) {
-    console.log('[Scheduler] 🎭 Generando mediciones simuladas...');
-    const rawData = generateSimulatedMeasurements();
-    const enriched = enrichMeasurements(rawData);
-    await saveMeasurements(enriched);
-    console.log(`[Scheduler] ✅ ${enriched.length} mediciones simuladas guardadas.`);
-    await checkAndTriggerAlerts(enriched);
-    return;
-  }
-
-  // ── MODO REAL ─────────────────────────────────────────────────
-  if (!canMakeRequest(activeLocationIds.length)) {
-    console.warn(`[Scheduler] Límite cercano (${requestsToday}/${DAILY_LIMIT}). Omitiendo ciclo.`);
-    return;
-  }
-
+  // Blindaje total: cualquier error aquí NUNCA debe tumbar el proceso.
   try {
+    if (activeLocationIds.length === 0) {
+      console.warn('[Scheduler] Sin estaciones. Esperando discovery...');
+      return;
+    }
+
+    // ── MODO SIMULADO ─────────────────────────────────────────────
+    if (usingSimulation || FORCE_SIMULATE) {
+      console.log('[Scheduler] 🎭 Generando mediciones simuladas...');
+      const rawData = generateSimulatedMeasurements();
+      const enriched = enrichMeasurements(rawData);
+      await saveMeasurements(enriched);
+      console.log(`[Scheduler] ✅ ${enriched.length} mediciones simuladas guardadas.`);
+      await checkAndTriggerAlerts(enriched);
+      return;
+    }
+
+    // ── MODO REAL ─────────────────────────────────────────────────
+    if (!canMakeRequest(activeLocationIds.length)) {
+      console.warn(`[Scheduler] Límite cercano (${requestsToday}/${DAILY_LIMIT}). Omitiendo ciclo.`);
+      return;
+    }
+
     console.log(`[Scheduler] Fetching ${activeLocationIds.length} estaciones reales... (req #${requestsToday + 1})`);
     const rawData = await fetchBatchMeasurements(activeLocationIds);
     requestsToday += activeLocationIds.length;
@@ -204,16 +205,20 @@ async function runFetch() {
     console.log(`[Scheduler] ✅ ${enriched.length} mediciones reales guardadas. Total hoy: ${requestsToday}/${DAILY_LIMIT}`);
     await checkAndTriggerAlerts(enriched);
   } catch (err) {
-    console.error('[Scheduler] ❌ Error fetch:', err.message);
+    console.error('[Scheduler] ❌ Error en runFetch (ciclo omitido, proceso sigue vivo):', err.message);
   }
 }
 
 async function checkAndTriggerAlerts(measurements) {
-  const maxAqi = Math.max(...measurements.map((m) => m.aqi?.value ?? 0));
-  if (maxAqi >= ALERT_AQI_THRESHOLD) {
-    const worst = measurements.find((m) => m.aqi?.value === maxAqi);
-    console.log(`[Scheduler] 🚨 AQI ${maxAqi} (${worst?.aqi?.category}) — disparando alertas...`);
-    triggerAlerts(maxAqi, worst?.aqi?.category, worst?.aqi?.color, worst?.station_id).catch(console.error);
+  try {
+    const maxAqi = Math.max(...measurements.map((m) => m.aqi?.value ?? 0));
+    if (maxAqi >= ALERT_AQI_THRESHOLD) {
+      const worst = measurements.find((m) => m.aqi?.value === maxAqi);
+      console.log(`[Scheduler] 🚨 AQI ${maxAqi} (${worst?.aqi?.category}) — disparando alertas...`);
+      await triggerAlerts(maxAqi, worst?.aqi?.category, worst?.aqi?.color, worst?.station_id);
+    }
+  } catch (err) {
+    console.error('[Scheduler] ❌ Error en checkAndTriggerAlerts (ignorado):', err.message);
   }
 }
 
