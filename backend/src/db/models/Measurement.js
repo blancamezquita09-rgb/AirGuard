@@ -4,14 +4,6 @@
 
 const mongoose = require('mongoose');
 
-const pollutantSchema = new mongoose.Schema(
-  {
-    value: { type: Number, required: true },
-    unit:  { type: String, required: true },
-  },
-  { _id: false }
-);
-
 const aqiSchema = new mongoose.Schema(
   {
     value:              { type: Number },
@@ -22,18 +14,21 @@ const aqiSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// Los contaminantes se guardan como números planos (µg/m³ o ppm según
+// corresponda). El scheduler ya normaliza los valores antes de guardar,
+// por lo que no se requiere un sub-documento {value, unit} aquí.
 const measurementSchema = new mongoose.Schema(
   {
     // Sin "index: true" aquí — los índices se declaran abajo con schema.index()
     station_id:     { type: String, required: true },
     timestamp:      { type: Date,   required: true },
     pollutants: {
-      pm25: pollutantSchema,
-      pm10: pollutantSchema,
-      co:   pollutantSchema,
-      no2:  pollutantSchema,
-      o3:   pollutantSchema,
-      so2:  pollutantSchema,
+      pm25: { type: Number, default: 0 },
+      pm10: { type: Number, default: 0 },
+      co:   { type: Number, default: 0 },
+      no2:  { type: Number, default: 0 },
+      o3:   { type: Number, default: 0 },
+      so2:  { type: Number, default: 0 },
     },
     aqi:            aqiSchema,
     recommendation: { type: String },
@@ -52,3 +47,4 @@ measurementSchema.index({ station_id: 1, timestamp: -1 });
 measurementSchema.index({ timestamp: 1 }, { expireAfterSeconds: 7_776_000 });
 
 module.exports = mongoose.model('Measurement', measurementSchema);
+
