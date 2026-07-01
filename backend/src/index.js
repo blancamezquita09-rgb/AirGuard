@@ -1,5 +1,5 @@
 /**
- * AirGuard Backend – Entry Point v0.9.0
+ * AirGuard Backend – Entry Point v0.9.1
  */
 
 require('dotenv').config();
@@ -16,6 +16,17 @@ const apiRouter           = require('./routes/api');
 const adminRouter         = require('./routes/admin');
 const subscriptionsRouter = require('./routes/subscriptions');
 const { startScheduler }  = require('./scheduler');
+
+// ── Red de seguridad global ────────────────────────────────────────
+// Nunca dejar que un error asíncrono no capturado tumbe el proceso
+// completo (esto causaba que el scheduler crasheara silenciosamente
+// en cada ciclo y Render reiniciara el servicio sin dejar datos).
+process.on('unhandledRejection', (reason) => {
+  console.error('[UnhandledRejection] ⚠️  ', reason?.message || reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[UncaughtException] ⚠️  ', err?.message || err);
+});
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -81,7 +92,7 @@ app.get('/health', (_req, res) => {
   res.json({
     status:    'ok',
     service:   'AirGuard API',
-    version:   '0.9.0',
+    version:   '0.9.1',
     timestamp: new Date().toISOString(),
     db:        require('mongoose').connection.readyState === 1 ? 'connected' : 'disconnected',
     frontend:  fs.existsSync(path.join(FRONTEND_DIR, 'index.html')) ? 'found' : 'missing',
@@ -126,7 +137,7 @@ async function main() {
   await connectDB();
   app.listen(PORT, () => {
     const mode = process.env.SIMULATE_DATA === 'true' ? '🎭 SIMULADO' : '🌐 REAL';
-    console.log(`\n🌿 AirGuard v0.9.0 — http://localhost:${PORT}`);
+    console.log(`\n🌿 AirGuard v0.9.1 — http://localhost:${PORT}`);
     console.log(`   Modo datos:  ${mode}`);
     console.log(`   API:         http://localhost:${PORT}/api/v1`);
     console.log(`   Panel admin: http://localhost:${PORT}/panel-air`);
