@@ -34,11 +34,11 @@ async function upsertStation(station) {
     { openaq_id: station.openaq_id },
     {
       $set: {
-        name:        station.name,
-        zone:        station.zone         ?? 'Centro',
-        coordinates: station.coordinates,
-        is_active:   station.is_active    ?? station.active ?? true,
-        last_update: new Date(),
+        name:         station.name,
+        zone:         station.zone         ?? 'Centro',
+        coordinates:  station.coordinates,
+        is_active:    station.is_active    ?? station.active ?? true,
+        last_updated: new Date(),
       },
     },
     { upsert: true, new: true }
