@@ -13,7 +13,7 @@ const stationSchema = new mongoose.Schema(
       lat: { type: Number, required: true },
       lng: { type: Number, required: true },
     },
-    active:       { type: Boolean, default: true },
+    is_active:    { type: Boolean, default: true },
     last_updated: { type: Date, default: Date.now },
   },
   {
