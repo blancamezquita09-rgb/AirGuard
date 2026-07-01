@@ -120,7 +120,7 @@ Copia las dos líneas al `.env` y a las variables de entorno en Render.
 
 1. Sube el repo a GitHub (carpeta `backend/` como raíz o con `rootDir: backend` en `render.yaml`)
 2. Crea un Web Service en [render.com](https://render.com) conectado al repo
-3. Render detecta `render.yaml` automáticamente
+3. Render detecta `render.yaml` automáticamente.
 4. Agrega las variables de entorno marcadas como `sync: false` en el dashboard
 5. Verifica en `/health` que `db: connected` y `frontend: found`
 
