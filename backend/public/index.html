@@ -774,16 +774,19 @@ function urlBase64ToUint8Array(base64String) {
 function shareWhatsApp() {
   const aqi = currentData?.summary?.avg_aqi ?? '–';
   const cat = currentData?.summary?.category ?? 'Sin datos';
-  const url = encodeURIComponent(window.location.origin);
-  const msg = encodeURIComponent(`🌿 AirGuard SV – Calidad del aire en San Salvador\n📊 ICA actual: *${aqi}* (${cat})\n🔗 Ver en vivo: ${decodeURIComponent(url)}`);
+  const url = window.location.origin;
+  // Nota: se evitan emojis fuera del BMP (🌿📊🔗 requieren 4 bytes UTF-8/surrogate pairs).
+  // Varios navegadores/WebViews de Android truncan o corrompen esos bytes al construir
+  // el link wa.me, mostrando "�" en vez del emoji. Se usan solo caracteres seguros.
+  const msg = encodeURIComponent(`AirGuard SV - Calidad del aire en San Salvador\nICA actual: *${aqi}* (${cat})\nVer en vivo: ${url}`);
   window.open(`https://wa.me/?text=${msg}`, '_blank');
 }
 
 function shareTwitter() {
   const aqi = currentData?.summary?.avg_aqi ?? '–';
   const cat = currentData?.summary?.category ?? 'Sin datos';
-  const url = encodeURIComponent(window.location.origin);
-  const msg = encodeURIComponent(`🌿 Calidad del aire en San Salvador: ICA ${aqi} (${cat})\nMonitoreo en tiempo real → ${decodeURIComponent(url)}\n#AirGuard #SanSalvador #CalidadDelAire`);
+  const url = window.location.origin;
+  const msg = encodeURIComponent(`Calidad del aire en San Salvador: ICA ${aqi} (${cat})\nMonitoreo en tiempo real -> ${url}\n#AirGuard #SanSalvador #CalidadDelAire`);
   window.open(`https://twitter.com/intent/tweet?text=${msg}`, '_blank');
 }
 
