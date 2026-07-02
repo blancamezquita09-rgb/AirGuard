@@ -1,6 +1,6 @@
 {
   "name": "airguard-backend",
-  "version": "0.9.2",
+  "version": "0.9.5",
   "description": "API backend para AirGuard – Monitoreo ciudadano de calidad del aire en San Salvador",
   "main": "src/index.js",
   "scripts": {
