@@ -6,6 +6,8 @@
 const router  = require('express').Router();
 const Station = require('../db/models/Station');
 const { generateToken, verifyPassword, requireAuth } = require('../auth');
+const { aqiToCategory }  = require('../aqiEngine');
+const { triggerAlerts }  = require('../notificationService');
 
 // ── POST /api/admin/login ────────────────────────────────────────
 router.post('/login', verifyPassword, (_req, res) => {
@@ -81,6 +83,29 @@ router.delete('/stations/:id', requireAuth, async (req, res) => {
     const station = await Station.findByIdAndDelete(req.params.id);
     if (!station) return res.status(404).json({ error: 'Estación no encontrada.' });
     res.json({ message: `Estación "${station.name}" eliminada.` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/admin/test-alert ───────────────────────────────────
+// Dispara una alerta REAL (email/push) a los suscriptores activos con un
+// valor de AQI de prueba, SIN insertar ningún registro falso en la colección
+// Measurements — así el dashboard, mapa e historial no se ven afectados.
+// Útil para verificar que el flujo de notificaciones funciona end-to-end.
+router.post('/test-alert', requireAuth, async (req, res) => {
+  try {
+    const aqi     = Number(req.body?.aqi) || 180; // 180 = categoría "Dañina" por defecto
+    const station = req.body?.station || 'Prueba Manual (Panel Admin)';
+    const { category, color } = aqiToCategory(aqi);
+
+    await triggerAlerts(aqi, category, color, station);
+
+    res.json({
+      success: true,
+      message: `Alerta de prueba (AQI ${aqi} — ${category}) enviada a los suscriptores elegibles.`,
+      aqi, category, color, station,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
