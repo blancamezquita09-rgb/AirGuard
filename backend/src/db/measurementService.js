@@ -54,7 +54,9 @@ async function getActiveStations() {
 }
 
 /**
- * Obtiene la última medición de cada estación.
+ * Obtiene la última medición de cada estación, enriquecida con los
+ * metadatos de la estación (coordinates, name, zone) vía $lookup —
+ * necesario para que el frontend pueda dibujar los marcadores en el mapa.
  * @returns {Promise<Array>}
  */
 async function getLatestMeasurements() {
@@ -67,6 +69,23 @@ async function getLatestMeasurements() {
       },
     },
     { $replaceRoot: { newRoot: '$doc' } },
+    {
+      $lookup: {
+        from:         'stations',
+        localField:   'station_id',
+        foreignField: 'openaq_id',
+        as:           'station',
+      },
+    },
+    { $unwind: { path: '$station', preserveNullAndEmptyArrays: true } },
+    {
+      $addFields: {
+        coordinates:  '$station.coordinates',
+        station_name: '$station.name',
+        zone:         '$station.zone',
+      },
+    },
+    { $project: { station: 0 } },
     { $sort: { 'aqi.value': -1 } },
   ]);
 }

@@ -1,5 +1,5 @@
 /**
- * AirGuard Backend – Entry Point v0.9.1
+ * AirGuard Backend – Entry Point v0.9.2
  */
 
 require('dotenv').config();
@@ -92,7 +92,7 @@ app.get('/health', (_req, res) => {
   res.json({
     status:    'ok',
     service:   'AirGuard API',
-    version:   '0.9.1',
+    version:   '0.9.2',
     timestamp: new Date().toISOString(),
     db:        require('mongoose').connection.readyState === 1 ? 'connected' : 'disconnected',
     frontend:  fs.existsSync(path.join(FRONTEND_DIR, 'index.html')) ? 'found' : 'missing',
@@ -137,7 +137,7 @@ async function main() {
   await connectDB();
   app.listen(PORT, () => {
     const mode = process.env.SIMULATE_DATA === 'true' ? '🎭 SIMULADO' : '🌐 REAL';
-    console.log(`\n🌿 AirGuard v0.9.1 — http://localhost:${PORT}`);
+    console.log(`\n🌿 AirGuard v0.9.2 — http://localhost:${PORT}`);
     console.log(`   Modo datos:  ${mode}`);
     console.log(`   API:         http://localhost:${PORT}/api/v1`);
     console.log(`   Panel admin: http://localhost:${PORT}/panel-air`);
