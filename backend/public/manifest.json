@@ -1,0 +1,25 @@
+{
+  "name": "AirGuard – Calidad del Aire",
+  "short_name": "AirGuard",
+  "description": "Monitoreo ciudadano de calidad del aire en San Salvador, El Salvador",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#e8f4fd",
+  "theme_color": "#2196F3",
+  "lang": "es",
+  "categories": ["health", "utilities"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/badge-96.png", "sizes": "96x96",   "type": "image/png", "purpose": "monochrome" }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Ver AQI actual",
+      "url": "/",
+      "description": "Ver el índice de calidad del aire en tiempo real"
+    }
+  ]
+}

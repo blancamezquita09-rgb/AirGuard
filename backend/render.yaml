@@ -1,0 +1,55 @@
+services:
+  - type: web
+    name: airguard-backend
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node src/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: FRONTEND_DIR
+        value: /opt/render/project/src/public
+      # ── Modo de datos ─────────────────────────────────────────
+      # false → intenta OpenAQ real; cae a simulado si no hay datos de SV
+      # true  → siempre usa datos simulados (sin consumir quota de OpenAQ)
+      - key: SIMULATE_DATA
+        value: false
+      # ── OpenAQ ────────────────────────────────────────────────
+      - key: OPENAQ_FETCH_INTERVAL_MS
+        value: 90000
+      - key: OPENAQ_DAILY_LIMIT
+        value: 1000
+      # ── Alertas ───────────────────────────────────────────────
+      - key: ALERT_AQI_THRESHOLD
+        value: 100
+      # ── Secretos (ingresar manualmente en el dashboard) ───────
+      - key: MONGODB_URI
+        sync: false
+      - key: OPENAQ_API_KEY
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_JWT_SECRET
+        generateValue: true
+      - key: APP_URL
+        sync: false
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_SECURE
+        value: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
