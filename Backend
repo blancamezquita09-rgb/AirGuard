@@ -1,7 +1,0 @@
-Es la parte que trabaja "detrás" de la aplicación.
-En AirGuard sería:
-Conectarse a la API de calidad del aire.
-Obtener los datos.
-Limpiar y transformar la información.
-Guardar datos si es necesario.
-Enviar la información al frontend.
