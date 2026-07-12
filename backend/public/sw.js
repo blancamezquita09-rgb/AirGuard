@@ -1,6 +1,7 @@
 /**
- * AirGuard – Service Worker
- * Maneja notificaciones push y cache offline básico
+ * AirGuard – Portal de Calidad del Aire y Salud Ambiental
+ * Cache offline básico
+ * Notificaciones push y clic en la notificación
  */
 
 const CACHE_NAME = 'airguard-v1';
