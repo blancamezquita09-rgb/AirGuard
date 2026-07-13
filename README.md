@@ -15,7 +15,6 @@ Desarrollado como proyecto de estancia profesional ESIT Grupo SN- 2
 - documentos entregables/ → Fases, bitácora, etc
 
 ## Estado
-  Fase	    Estado
 - Fase 0	Completada
 - Fase 1	Completada
 - Fase 2	En desarrollo
