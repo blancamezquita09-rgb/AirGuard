@@ -4,15 +4,17 @@ Portal web para monitoreo ciudadano de calidad del aire.
 Desarrollado como proyecto de estancia profesional ESIT Grupo SN- 2
 
 ## Tecnologías
-- Backend: 
-- Frontend:
+- Backend: Node.js + Express.js
+- Frontend: React + Leaflet
 - Datos: API OpenAQ
-- Hosting: 
+- Base de datos: MongoDB Atlas
+- Hosting: Versel + Render
+- Controlde versiones: GitHub
 
 ## Estructura
-- backend/ → 
-- frontend/ →
-- documentos entregables/ → Fases, bitácora, etc
+- backend/ → Código fuente del servidor, consumo de la API OpenAQ, procesamiento de datos, conexión con MongoDB.
+- frontend/ → 
+- documentos entregables/ → incluyendo fases de desarrollo, bitácoras, diagramas, informes técnicos, evidencias y entregables.
 
 ## Estado
 - Fase 0	Completada
