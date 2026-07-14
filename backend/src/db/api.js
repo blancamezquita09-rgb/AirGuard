@@ -1,5 +1,6 @@
 /**
- * AirGuard – REST API Routes
+ * AirGuard – Portal Web para Monitoreo de Calidad del Aire y Salud Ambiental
+ REST API Routes
  * Base: /api/v1
  */
 
