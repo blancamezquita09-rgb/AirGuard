@@ -16,7 +16,7 @@ services:
         value: 3001
       - key: FRONTEND_DIR
         value: /opt/render/project/src/public
-      # ── Modo de datos ─────────────────────────────────────────
+      ## ── Modo de datos ─────────────────────────────────────────
       # false → intenta OpenAQ real; cae a simulado si no hay datos de SV
       # true  → siempre usa datos simulados (sin consumir quota de OpenAQ)
       - key: SIMULATE_DATA
