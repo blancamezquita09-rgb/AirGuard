@@ -1,5 +1,6 @@
 /**
- * AirGuard – Mongoose Model: Station
+ * AirGuard – Portal Web para monitoreo de calidad del aire y salud ambiental El Salvado
+ * Mongoose Model: Station
  */
 
 const mongoose = require('mongoose');
