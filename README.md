@@ -5,7 +5,7 @@ Desarrollado como proyecto de estancia profesional ESIT Grupo SN- 2
 
 ## Tecnologías
 - Backend: Node.js + Express.js
-- Frontend: React + Leaflet
+- Frontend: Leaflet
 - Datos: API OpenAQ
 - Base de datos: MongoDB Atlas
 - Hosting: Versel + Render
