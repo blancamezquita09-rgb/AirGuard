@@ -1,5 +1,6 @@
 /**
- * AirGuard – Modelo Subscriber
+ * AirGuard – Portal Web para Monitoreo de Calidad del Aire y Salud Ambiental
+ Modelo Subscriber
  * Suscriptores de alertas por email y/o notificaciones push
  */
 
