@@ -1,5 +1,6 @@
 /**
- * AirGuard – Subscription Routes
+ * AirGuard – AirGuard – Portal web para monitoreo de calidad del aire y salud ambiental El Salvador
+ *Subscription Routes
  * Base: /api/v1/subscriptions
  */
 
