@@ -1,5 +1,6 @@
 /**
- * AirGuard – AQI Engine (Backend)
+ * AirGuard – Portal Web para Monitoreo de Calidad del Aire y Salud Ambiental
+ AQI Engine (Backend)
  */
 
 const PM25_BREAKPOINTS = [
