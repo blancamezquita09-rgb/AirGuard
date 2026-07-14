@@ -1,5 +1,6 @@
 /**
- * AirGuard – Simulator Engine
+ * AirGuard – Portal Web para monitoreo de calidad del aire y salud ambiental El Salvador 
+ * Simulator Engine
  *
  * Genera mediciones realistas para 6 estaciones de San Salvador
  * cuando OpenAQ no tiene datos disponibles para El Salvador.
@@ -69,11 +70,11 @@ const SIMULATED_STATIONS = [
 /**
  * Factor de carga horaria (0.6 – 1.8).
  * Simula el patrón de tráfico vehicular en San Salvador:
- *   - Madrugada (0-5h): baja carga
- *   - Pico matutino (6-9h): alta carga
- *   - Mediodía (10-14h): carga media-alta
- *   - Pico vespertino (15-19h): alta carga
- *   - Noche (20-23h): baja-media carga
+ *   - Madrugada (0-5h): baja carga vehicular
+ *   - Pico matutino (6-9h): alta carga vehicular
+ *   - Mediodía (10-14h): carga media-alta vehicular
+ *   - Pico vespertino (15-19h): alta carga vehicular
+ *   - Noche (20-23h): baja-media carga vehicular
  */
 function hourlyLoadFactor(hour) {
   const factors = [
