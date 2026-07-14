@@ -1,5 +1,6 @@
 /**
- * AirGuard – MongoDB Connection
+ * AirGuard – Portal Web para Monitoreo de Calidad del Aire y Salud Ambiental
+ MongoDB Connection
  * Conecta con MongoDB Atlas usando Mongoose.
  */
 
