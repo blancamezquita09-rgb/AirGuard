@@ -1,5 +1,5 @@
 /**
- * AirGuard – Portal de Calidad del Aire y Salud Ambiental
+ * AirGuard – Portal web de calidad del aire y salud ambiental El Salvador
  * Cache offline básico
  * Notificaciones push y clic en la notificación
  */
