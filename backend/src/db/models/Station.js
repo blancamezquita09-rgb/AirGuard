@@ -1,5 +1,5 @@
 /**
- * AirGuard – Portal Web para monitoreo de calidad del aire y salud ambiental El Salvado
+ * AirGuard – Portal Web para monitoreo de calidad del aire y salud ambiental El Salvador
  * Mongoose Model: Station
  */
 
