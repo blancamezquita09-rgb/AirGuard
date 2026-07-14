@@ -1,5 +1,6 @@
 /**
- * AirGuard – Measurement Service
+ * AirGuard – Portal Web para monitoreo de calidad del aire y salud ambiental El Salvador 
+ * Measurement Service
  * Operaciones CRUD sobre las colecciones de mediciones y estaciones.
  */
 
