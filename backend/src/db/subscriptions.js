@@ -1,5 +1,6 @@
 /**
- * AirGuard – Subscription Routes
+ * AirGuard – Portal Web para Monitoreo de Calidad del Aire y Salud Ambiental
+ Subscription Routes
  * Base: /api/v1/subscriptions
  */
 
