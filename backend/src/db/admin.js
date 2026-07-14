@@ -1,5 +1,6 @@
 /**
- * AirGuard – Admin Routes
+ * AirGuard – Portal Web para Monitoreo de Calidad del Aire y Salud Ambiental
+ Admin Routes
  * CRUD de estaciones protegido con JWT
  */
 
