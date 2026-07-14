@@ -13,7 +13,6 @@ Desarrollado como proyecto de estancia profesional ESIT Grupo SN- 2
 
 ## Estructura
 - backend/ → Código fuente del servidor, consumo de la API OpenAQ, procesamiento de datos, conexión con MongoDB.
-- frontend/ → 
 - documentos entregables/ → incluyendo fases de desarrollo, bitácoras, diagramas, informes técnicos, evidencias y entregables.
 
 ## Estado
