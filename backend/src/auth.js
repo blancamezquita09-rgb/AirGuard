@@ -1,5 +1,6 @@
 /**
- * AirGuard – Auth Middleware
+ * AirGuard – Portal web para monitoreo de calidad del aire y salud ambiental El Salvador
+ * Auth Middleware
  * JWT stateless + rate limiting de intentos de login
  */
 
@@ -9,7 +10,7 @@ const JWT_SECRET   = process.env.ADMIN_JWT_SECRET || 'cambia-este-secreto-en-env
 const JWT_EXPIRES  = '8h';
 const ADMIN_PASS   = process.env.ADMIN_PASSWORD   || 'cambia-esta-clave-en-env';
 
-// ── Intentos fallidos por IP (en memoria) ────────────────────────
+// ── Intentos fallidos por IP (en memoria) ────────────────────
 const failedAttempts = new Map(); // ip → { count, blockedUntil }
 const MAX_ATTEMPTS   = 3;
 const BLOCK_MS       = 15 * 60 * 1000; // 15 minutos
@@ -20,7 +21,7 @@ function getClientIP(req) {
     || 'unknown';
 }
 
-// ── Generar token ────────────────────────────────────────────────
+// ── Generar token ──────────────────────────────────────────────
 function generateToken() {
   return jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
 }
@@ -52,7 +53,7 @@ function verifyPassword(req, res, next) {
     });
   }
 
-  // Éxito → limpiar intentos
+  // Éxito → limpiar intentos 
   failedAttempts.delete(ip);
   next();
 }
