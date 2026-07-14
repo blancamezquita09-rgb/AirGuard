@@ -1,5 +1,6 @@
 /**
- * AirGuard – Mongoose Model: Measurement
+ * AirGuard – Portal Web para Monitoreo de Calidad del Aire y Salud Ambiental
+ Mongoose Model: Measurement
  */
 
 const mongoose = require('mongoose');
