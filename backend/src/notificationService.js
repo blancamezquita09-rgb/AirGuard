@@ -1,5 +1,6 @@
 /**
- * AirGuard – Notification Service
+ * AirGuard – Portal Web para monitoreo de calidad del aire y salud ambiental El Salvado 
+ * Notification Service
  * Envío de alertas por email (nodemailer) y Web Push (web-push)
  *
  * Dependencias a instalar:
