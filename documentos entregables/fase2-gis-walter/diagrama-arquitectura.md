@@ -15,3 +15,10 @@ Responsable: Walter Edgardo Rodríguez Valle - GIS Jr.
 Para que el usuario no se confunda, el mapa debe mostrar claramente
 si un punto es un dato real (de OpenAQ) o un dato de prueba (demo),
 usando colores o etiquetas distintas.
+## Evidencia - Mapa funcionando en vivo
+
+El mapa geoespacial ya está desplegado y funcionando en producción,
+mostrando las estaciones activas con sus valores en tiempo real.
+
+Portal en vivo: https://airguard-9sm4.onrender.com/
+Captura de evidencia: https://github.com/blancamezquita09-rgb/AirGuard/blob/main/documentos%20entregables/fase3-gis-walter/mapa-airguard-walter.png
