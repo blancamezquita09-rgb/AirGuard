@@ -32,6 +32,7 @@
  *   tráfico, reflejando su comportamiento fotoquímico.
  * - getSimulatedStations(): retorna los metadatos de las estaciones
  *   simuladas en el formato esperado por upsertStation().
+  */
 
 // ── Estaciones de San Salvador ────────────────────────────────────
 const SIMULATED_STATIONS = [
