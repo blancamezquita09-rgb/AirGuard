@@ -15,6 +15,24 @@
  * Activación: variable de entorno SIMULATE_DATA=true
  */
 
+/**
+ * Módulo de simulación de mediciones de calidad del aire
+ * -------------------------------------------------------
+ * Descripción:
+ * Este módulo genera datos simulados de mediciones de contaminantes
+ * (PM2.5, PM10, CO, NO2, O3, SO2) para un conjunto de estaciones
+ * de monitoreo, replicando el formato que produce el scheduler al
+ * procesar datos reales de la API de OpenAQ.
+ *
+ * Funciones principales:
+ * - generateSimulatedMeasurements(): genera lecturas simuladas por
+ *   estación, ajustadas según la hora del día (factor de carga/tráfico)
+ *   y con variación aleatoria (jitter) para simular condiciones reales.
+ *   El ozono (O3) se calcula de forma inversamente proporcional al
+ *   tráfico, reflejando su comportamiento fotoquímico.
+ * - getSimulatedStations(): retorna los metadatos de las estaciones
+ *   simuladas en el formato esperado por upsertStation().
+
 // ── Estaciones de San Salvador ────────────────────────────────────
 const SIMULATED_STATIONS = [
   {
