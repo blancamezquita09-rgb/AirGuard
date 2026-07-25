@@ -3,6 +3,10 @@
 Portal web para monitoreo ciudadano de calidad del aire.
 Desarrollado como proyecto de estancia profesional ESIT Grupo SN- 2
 
+## Objetivo
+Desarrollar una plataforma web que permita visualizar información sobre la calidad del aire de manera sencilla, 
+apoyando la toma de decisiones de la ciudadanía mediante datos abiertos y herramientas de visualización geográfica.
+
 ## Tecnologías
 - Backend: Node.js + Express.js
 - Frontend: Leaflet
