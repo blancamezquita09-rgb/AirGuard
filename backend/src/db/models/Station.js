@@ -24,3 +24,12 @@ const stationSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model('Station', stationSchema);
+
+
+
+// Nota GIS (Walter Rodríguez - Fase 2/3):
+// Este modelo almacena las coordenadas de cada estación de monitoreo.
+// Se recomienda crear un índice geoespacial "2dsphere" sobre el campo
+// de ubicación para optimizar las búsquedas por cercanía usadas en el
+// mapa interactivo. Ver documentacion en:
+// documentos entregables/fase2-gis-walter/diagrama-arquitectura.md
