@@ -1,5 +1,5 @@
 /**
- * AirGuard Backend – Entry Point v0.9.2
+ * AirGuard Backend – Entry Point v0.9.5
  */
 
 require('dotenv').config();
