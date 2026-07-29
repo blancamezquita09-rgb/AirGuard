@@ -7,6 +7,11 @@
  *   GET /v3/locations?countries_id=222&limit=20     → descubrir estaciones de SV
  *   GET /v3/locations/{id}/latest                   → última lectura por estación
  *   GET /v3/locations/{id}/measurements             → historial por estación
+ *
+ * Reintentos con backoff exponencial (v0.9.5):
+ *   Si OpenAQ responde 429 (rate limit) o 5xx (server error), se reintenta
+ *   hasta MAX_RETRIES veces con delays crecientes: 1s, 2s, 4s.
+ *   Los errores 4xx (excepto 429) no se reintentan (son permanentes).
  */
 
 const axios = require('axios');
@@ -29,6 +34,68 @@ const MIN_CALL_INTERVAL_MS = 85_000;
 let lastCallAt = 0;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// ─────────────────────────────────────────────
+// Reintentos con backoff exponencial
+// ─────────────────────────────────────────────
+const MAX_RETRIES  = 3;
+const BASE_DELAY_MS = 1000; // 1s inicial; 2s, 4s en reintentos sucesivos
+
+/**
+ * Ejecuta una petición HTTP con reintentos automáticos.
+ * - Reintenta en: 429 (Too Many Requests), 5xx (server errors), timeouts, ECONNRESET.
+ * - NO reintenta en: 4xx (excepto 429) — son errores permanentes (auth, not found, etc.).
+ * - Backoff exponencial: delay = BASE_DELAY_MS * 2^attempt (1s, 2s, 4s).
+ *
+ * @param {Function} requestFn - Función que devuelve una promesa de axios.
+ * @param {String} label - Etiqueta para logs.
+ * @returns {Promise<any>} - Respuesta de axios (ya desempaquetada).
+ */
+async function withRetry(requestFn, label = 'OpenAQ') {
+  let lastError;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const response = await requestFn();
+      return response;
+    } catch (err) {
+      lastError = err;
+
+      // Determinar si el error es reintentable
+      const status = err.response?.status;
+      const code   = err.code; // axios error codes: ECONNRESET, ETIMEDOUT, etc.
+      const isRetryable =
+        status === 429 ||
+        (status >= 500 && status < 600) ||
+        code === 'ECONNRESET' ||
+        code === 'ETIMEDOUT' ||
+        code === 'ECONNABORTED' ||
+        code === 'EAI_AGAIN';
+
+      // Errores 4xx (excepto 429) no se reintentan
+      if (status && status >= 400 && status < 500 && status !== 429) {
+        console.warn(`[${label}] Error ${status} — no reintentable (permanente).`);
+        throw err;
+      }
+
+      // Si no quedan reintentos, lanzar
+      if (attempt === MAX_RETRIES) {
+        console.error(`[${label}] Falló tras ${MAX_RETRIES + 1} intentos. Último error: ${err.message}`);
+        throw err;
+      }
+
+      // Calcular delay exponencial: 1s, 2s, 4s
+      const delayMs = BASE_DELAY_MS * Math.pow(2, attempt);
+      const reason  = status ? `HTTP ${status}` : (code || err.message);
+      console.warn(`[${label}] ${reason} — reintentando en ${delayMs}ms (intento ${attempt + 1}/${MAX_RETRIES + 1})...`);
+
+      await sleep(delayMs);
+    }
+  }
+
+  // No debería llegar aquí, pero por seguridad
+  throw lastError;
+}
+
 const openaqClient = axios.create({
   baseURL: BASE_URL,
   timeout: 20_000,
@@ -42,12 +109,15 @@ const openaqClient = axios.create({
 // Descubrir estaciones activas en El Salvador
 // ─────────────────────────────────────────────
 async function discoverStations() {
-  const response = await openaqClient.get('/locations', {
-    params: {
-      countries_id: SV_COUNTRY_ID,
-      limit: 20,
-    },
-  });
+  const response = await withRetry(
+    () => openaqClient.get('/locations', {
+      params: {
+        countries_id: SV_COUNTRY_ID,
+        limit: 20,
+      },
+    }),
+    'OpenAQ:discover'
+  );
 
   const results = response.data.results ?? [];
 
@@ -78,12 +148,13 @@ async function fetchBatchMeasurements(locationIds) {
     return [];
   }
 
-  // Fetch latest de cada estación (1 req por estación)
+  // Fetch latest de cada estación con reintentos individuales
   const results = await Promise.allSettled(
     ids.map((id) =>
-      openaqClient
-        .get(`/locations/${id}/latest`)
-        .then((r) => ({ id, data: r.data }))
+      withRetry(
+        () => openaqClient.get(`/locations/${id}/latest`).then((r) => ({ id, data: r.data })),
+        `OpenAQ:fetch:${id}`
+      )
     )
   );
 
@@ -129,12 +200,15 @@ async function fetchBatchMeasurements(locationIds) {
 // ─────────────────────────────────────────────
 async function fetchHistory(locationId, hours = 24) {
   const dateFrom = new Date(Date.now() - hours * 3600 * 1000).toISOString();
-  const response = await openaqClient.get(`/locations/${locationId}/measurements`, {
-    params: {
-      date_from: dateFrom,
-      limit: 500,
-    },
-  });
+  const response = await withRetry(
+    () => openaqClient.get(`/locations/${locationId}/measurements`, {
+      params: {
+        date_from: dateFrom,
+        limit: 500,
+      },
+    }),
+    `OpenAQ:history:${locationId}`
+  );
   return response.data.results ?? [];
 }
 
@@ -163,4 +237,4 @@ function inferZone(name = '') {
   return 'Centro';
 }
 
-module.exports = { fetchBatchMeasurements, discoverStations, fetchHistory };
+module.exports = { fetchBatchMeasurements, discoverStations, fetchHistory, withRetry };
