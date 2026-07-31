@@ -126,13 +126,13 @@ app.get('*', (_req, res) => {
   });
 });
 
-// ── Error Handler ─────────────────────────────────────────────────
+// ── Error Handler ──────────────────────────────────
 app.use((err, _req, res, _next) => {
   console.error('[Error]', err.message);
   res.status(500).json({ error: 'Error interno del servidor.' });
 });
 
-// ── Start ─────────────────────────────────────────────────────────
+// ── Start ──────────────────────────────────────────
 async function main() {
   await connectDB();
   app.listen(PORT, () => {
