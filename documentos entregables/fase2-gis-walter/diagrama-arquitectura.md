@@ -22,3 +22,12 @@ mostrando las estaciones activas con sus valores en tiempo real.
 
 Portal en vivo: https://airguard-9sm4.onrender.com/
 Captura de evidencia: https://github.com/blancamezquita09-rgb/AirGuard/blob/main/documentos%20entregables/fase3-gis-walter/mapa-airguard-walter.png
+
+## Actualizacion Fase 3 - Implementacion real
+
+El frontend se implemento en HTML y JavaScript nativo (no con React).
+El mapa (Leaflet) se alimenta mediante la funcion fetchAll(), que
+consulta al backend a traves de apiFetch(). Confirmado en pruebas
+(Fase 3, Caso CV-04): si una estacion no tiene coordenadas validas,
+el marcador no se dibuja, pero la estacion se sigue mostrando en la
+lista lateral del dashboard.
