@@ -604,7 +604,16 @@ function updateMapMarkers(measurements) {
   if (list) list.innerHTML = listHTML || '<p style="color:var(--text-muted);padding:10px">Sin estaciones con datos.</p>';
   document.getElementById('map-update-time').textContent = new Date().toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
 }
-
+// ════════════════════════════════════════════════════════════════
+// NOTA GIS (Walter Rodriguez - Fase 3):
+// updateMapMarkers() descarta el marcador cuando no hay lat/lng
+// validos (linea "if (lat && lng) {"), pero la estacion se mantiene
+// visible en stations-list (comportamiento validado en Caso de
+// Prueba CV-04, matriz de pruebas Fase 3). El color de cada marcador
+// se calcula con aqiColor(aqi), igual que en las tarjetas de
+// contaminantes. Ver documentacion ampliada en:
+// documentos entregables/fase3-gis-walter/componente-mapa-airmap.md
+// ════════════════════════════════════════════════════════════════
 // ════════════════════════════════════════════════════════════════
 // CHART (Chart.js)
 // ════════════════════════════════════════════════════════════════
