@@ -7,7 +7,7 @@
 const CACHE_NAME = 'airguard-v1';
 const OFFLINE_URLS = ['/', '/index.html'];
 
-// ── Install: cachear recursos básicos ────────────────────────────
+// ── Install: cachear recursos básicos
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(OFFLINE_URLS))
@@ -15,7 +15,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// ── Activate: limpiar caches viejos ──────────────────────────────
+// ── Activate: limpiar caches viejos
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
