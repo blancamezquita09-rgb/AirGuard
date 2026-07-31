@@ -6,7 +6,7 @@
 
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET   = process.env.ADMIN_JWT_SECRET || 'cambia-este-secreto-en-env';
+const JWT_SECRET   = process.env.ADMIN_JWT_SECRET || 'cambia-este-secreto';
 const JWT_EXPIRES  = '8h';
 const ADMIN_PASS   = process.env.ADMIN_PASSWORD   || 'cambia-esta-clave-en-env';
 
