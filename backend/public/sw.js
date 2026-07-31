@@ -32,7 +32,7 @@ self.addEventListener('push', (event) => {
 
   const title   = data.title   || '⚠️ Alerta AirGuard';
   const options = {
-    body:    data.body    || 'Se detectó un nivel de aire elevado en San Salvador.',
+    body:    data.body    || 'Se detectó un nivel de aire elevado en san salvador.',
     icon:    data.icon    || '/icon-192.png',
     badge:   data.badge   || '/badge-96.png',
     tag:     data.tag     || 'airguard-alert',
