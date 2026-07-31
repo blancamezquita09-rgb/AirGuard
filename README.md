@@ -32,7 +32,7 @@ Cuando OpenAQ no tiene datos disponibles para El Salvador, este módulo genera m
 - Fase 0	Completada
 - Fase 1	Completada
 - Fase 2	Completada
-- Fase 3	En Proceso
-- Fase 4	Pendiente
+- Fase 3	Completada
+- Fase 4	En Proceso
 
 
