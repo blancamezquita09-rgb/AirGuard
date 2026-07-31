@@ -29,7 +29,7 @@ process.on('uncaughtException', (err) => {
 });
 
 const app  = express();
-const PORT = process.env.PORT || ;
+const PORT = process.env.PORT || 3001;
 
 // ── Trust Proxy ───────────────────────────────────────────────────
 app.set('trust proxy', 1);
