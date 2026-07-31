@@ -641,9 +641,7 @@ function toast(msg, type = 'success') {
   setTimeout(() => el.classList.remove('show'), 3500);
 }
 
-// ════════════════════════════════════════════════════════
 // INIT — si ya hay token en sessionStorage, ir directo al panel
-// ════════════════════════════════════════════════════════
 if (authToken) {
   showPanel();
 } else {
