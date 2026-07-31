@@ -169,4 +169,4 @@ async function triggerAlerts(aqi, category, color, station) {
   }
 }
 
-.exports = { triggerAlerts, sendEmailAlert, sendPushAlert };
+module.exports = { triggerAlerts, sendEmailAlert, sendPushAlert };
