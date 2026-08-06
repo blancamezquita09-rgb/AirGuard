@@ -53,7 +53,7 @@ function getHealthRecommendation(category) {
     'Peligrosa':         'Alerta máxima. No salga al exterior. Cierre ventanas.',
     'Sin datos':         'No hay mediciones recientes disponibles para esta estación.',
   };
-  return map[category] ?? 'Sin información .';
+  return map[category] ?? 'Sin información disponible.';
 }
 +
 module.exports = { calcAQI, aqiToCategory, PM25_BREAKPOINTS, PM10_BREAKPOINTS, getHealthRecommendation };
