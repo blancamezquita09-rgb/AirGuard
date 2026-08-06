@@ -9,7 +9,7 @@ const PM25_BREAKPOINTS = [
   { cLow: 35.5,  cHigh: 55.4,  iLow: 101, iHigh: 150, category: 'Dañina (G. Sens.)',  color: '#ff9800' },
   { cLow: 55.5,  cHigh: 150.4, iLow: 151, iHigh: 200, category: 'Dañina',             color: '#f44336' },
   { cLow: 150.5, cHigh: 250.4, iLow: 201, iHigh: 300, category: 'Muy Dañina',         color: '#9c27b0' },
-  { cLow: 250.5, cHigh: 500.4, iLow: 301, iHigh: 500, category: 'Peligrosa',          color: '#7b1fa2' },
+  { cLow: 250.5, cHigh: 500.4, iLow: 301, iHigh: 500, category: 'Pelig',          color: '#7b1fa2' },
 ];
 
 const PM10_BREAKPOINTS = [
