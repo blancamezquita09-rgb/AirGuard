@@ -24,7 +24,7 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
 }
 
 // ── Email Transport ──────────────────────────────────────────────
-function getTransport() {
+function getTrans() {
   return nodemailer.createTransport({
     host:   process.env.SMTP_HOST || 'smtp.gmail.com',
     port:   parseInt(process.env.SMTP_PORT, 10) || 587,
