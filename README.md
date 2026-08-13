@@ -25,7 +25,7 @@ Cuando OpenAQ no tiene datos disponibles para El Salvador, este módulo genera m
 - Controlde versiones: GitHub
 
 ## Estructura
-- backend/ → Código fuente del servidor, consumo de la API OpenAQ, procesamiento de datos, conexión con MongoDB.
+- backend/ → Código fuente del servidor, consumo de la API OpenAQ, procesamiento de datos, conexión con MongoDB y los datos llegan a la aplicación web progresiva, donde el usuario puede consultarlos de forma clara e interactiva.
 - documentos entregables/ → incluyendo fases de desarrollo, bitácoras, diagramas, informes técnicos, evidencias y entregables.
 
 ## Estado
