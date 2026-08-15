@@ -29,10 +29,10 @@ Cuando OpenAQ no tiene datos disponibles para El Salvador, este módulo genera m
 - documentos entregables/ → incluyendo fases de desarrollo, bitácoras, diagramas, informes técnicos, evidencias y entregables.
 
 ## Estado
-- Fase 0	Completada
-- Fase 1	Completada
-- Fase 2	Completada
-- Fase 3	Completada
-- Fase 4	En Proceso
+- Fase 0	Completado
+- Fase 1	Completado
+- Fase 2	Completado
+- Fase 3	Completado
+- Fase 4	Proyecto AirGuard Completado
 
 
